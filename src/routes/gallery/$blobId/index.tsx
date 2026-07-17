@@ -130,11 +130,11 @@ function BlobDetailPage() {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Left: Image */}
-        <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+        <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden aspect-[4/3]">
           <img
             src={blob.imageFullUrl}
             alt={blob.title}
-            className="w-full h-auto object-cover"
+            className="w-full h-full object-cover"
           />
         </div>
 
