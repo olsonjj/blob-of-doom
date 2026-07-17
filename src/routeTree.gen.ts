@@ -14,6 +14,7 @@ import { Route as UploadIndexRouteImport } from './routes/upload/index'
 import { Route as GalleryIndexRouteImport } from './routes/gallery/index'
 import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
+import { Route as GalleryBlobIdIndexRouteImport } from './routes/gallery/$blobId/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const SignInSplatRoute = SignInSplatRouteImport.update({
   path: '/sign-in/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GalleryBlobIdIndexRoute = GalleryBlobIdIndexRouteImport.update({
+  id: '/gallery/$blobId/',
+  path: '/gallery/$blobId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/sign-up/$': typeof SignUpSplatRoute
   '/gallery/': typeof GalleryIndexRoute
   '/upload/': typeof UploadIndexRoute
+  '/gallery/$blobId/': typeof GalleryBlobIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/sign-up/$': typeof SignUpSplatRoute
   '/gallery': typeof GalleryIndexRoute
   '/upload': typeof UploadIndexRoute
+  '/gallery/$blobId': typeof GalleryBlobIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,33 @@ export interface FileRoutesById {
   '/sign-up/$': typeof SignUpSplatRoute
   '/gallery/': typeof GalleryIndexRoute
   '/upload/': typeof UploadIndexRoute
+  '/gallery/$blobId/': typeof GalleryBlobIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in/$' | '/sign-up/$' | '/gallery/' | '/upload/'
+  fullPaths:
+    | '/'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/gallery/'
+    | '/upload/'
+    | '/gallery/$blobId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in/$' | '/sign-up/$' | '/gallery' | '/upload'
-  id: '__root__' | '/' | '/sign-in/$' | '/sign-up/$' | '/gallery/' | '/upload/'
+  to:
+    | '/'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/gallery'
+    | '/upload'
+    | '/gallery/$blobId'
+  id:
+    | '__root__'
+    | '/'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/gallery/'
+    | '/upload/'
+    | '/gallery/$blobId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +105,7 @@ export interface RootRouteChildren {
   SignUpSplatRoute: typeof SignUpSplatRoute
   GalleryIndexRoute: typeof GalleryIndexRoute
   UploadIndexRoute: typeof UploadIndexRoute
+  GalleryBlobIdIndexRoute: typeof GalleryBlobIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/gallery/$blobId/': {
+      id: '/gallery/$blobId/'
+      path: '/gallery/$blobId'
+      fullPath: '/gallery/$blobId/'
+      preLoaderRoute: typeof GalleryBlobIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignUpSplatRoute: SignUpSplatRoute,
   GalleryIndexRoute: GalleryIndexRoute,
   UploadIndexRoute: UploadIndexRoute,
+  GalleryBlobIdIndexRoute: GalleryBlobIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

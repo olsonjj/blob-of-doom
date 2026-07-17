@@ -37,6 +37,7 @@ export const blobs = pgTable('blobs', {
   uploaderProfileId: text('uploader_profile_id')
     .notNull()
     .references(() => profiles.clerkUserId),
+  viewCount: integer('view_count').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
