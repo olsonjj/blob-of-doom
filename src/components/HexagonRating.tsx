@@ -1,33 +1,102 @@
+import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
+
 /**
  * Renders the Doom Scale as 1–5 hexagons.
- * Filled hexagons = rating value, empty = remaining up to 5.
- * Partial fill for fractional averages.
+ *
+ * Read-only mode (default): displays filled/empty hexagons for the average rating.
+ * Interactive mode: authenticated users can click to rate; shows hover preview
+ * and highlights the user's own rating.
  */
 export function HexagonRating({
   rating,
   size = 20,
+  interactive = false,
+  userRating,
+  onRate,
+  isAuthenticated = false,
 }: {
   rating: number
   size?: number
+  /** Enable click-to-rate interaction */
+  interactive?: boolean
+  /** The current user's own rating (1-5), if any */
+  userRating?: number | null
+  /** Called when the user clicks a hexagon to submit their rating */
+  onRate?: (score: number) => void
+  /** Whether the current user is authenticated */
+  isAuthenticated?: boolean
 }) {
+  const [hoveredScore, setHoveredScore] = useState<number | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
   // Clamp between 0 and 5
   const clamped = Math.max(0, Math.min(5, rating))
   const fullHexes = Math.floor(clamped)
   const partial = clamped - fullHexes
   const emptyHexes = 5 - fullHexes - (partial > 0 ? 1 : 0)
 
+  const handleClick = async (score: number) => {
+    if (!interactive || !onRate || submitting) return
+    setSubmitting(true)
+    try {
+      await onRate(score)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Determine the "active" score for highlighting:
+  // 1. If hovering, show hovered score
+  // 2. If user has rated, show their rating
+  // 3. Otherwise, no individual highlight (show average)
+  const activeScore = hoveredScore ?? (interactive ? null : null)
+  const highlightScore = hoveredScore ?? (userRating ?? null)
+
   return (
-    <div className="flex items-center gap-0.5" title={`Doom Scale: ${rating.toFixed(1)} / 5`}>
-      {Array.from({ length: fullHexes }, (_, i) => (
-        <Hexagon key={`full-${i}`} filled size={size} />
-      ))}
-      {partial > 0 && <Hexagon partial={partial} size={size} />}
-      {Array.from({ length: emptyHexes }, (_, i) => (
-        <Hexagon key={`empty-${i}`} size={size} />
-      ))}
+    <div className="flex items-center gap-0.5 group" title={`Doom Scale: ${rating.toFixed(1)} / 5`}>
+      {Array.from({ length: 5 }, (_, i) => {
+        const score = i + 1
+        const isFilled = score <= fullHexes
+        const isPartial = !isFilled && score === fullHexes + 1 && partial > 0
+        const isEmpty = !isFilled && !isPartial
+
+        // Highlight logic:
+        // - If hovering: highlight up to hoveredScore
+        // - If user has rated and not hovering: highlight user's rating
+        const isHighlighted = highlightScore !== null && score <= highlightScore
+        const isUserRating = userRating === score && hoveredScore === null
+
+        return (
+          <Hexagon
+            key={score}
+            filled={isFilled}
+            partial={isPartial ? partial : undefined}
+            size={size}
+            interactive={interactive && isAuthenticated}
+            highlighted={isHighlighted}
+            isUserRating={isUserRating}
+            dimmed={interactive && isAuthenticated && hoveredScore !== null && score > hoveredScore}
+            submitting={submitting}
+            onClick={() => handleClick(score)}
+            onHover={() => interactive && isAuthenticated && setHoveredScore(score)}
+            onLeave={() => setHoveredScore(null)}
+          />
+        )
+      })}
       <span className="ml-1.5 text-xs text-noir-400 tabular-nums">
         {rating.toFixed(1)}
       </span>
+
+      {/* Sign-in prompt for unauthenticated users */}
+      {interactive && !isAuthenticated && (
+        <span className="ml-2 text-xs text-noir-500">
+          <Link to="/sign-in" className="text-doom-400 hover:text-doom-300 transition-colors">
+            Sign in
+          </Link>
+          {' to rate'}
+        </span>
+      )}
     </div>
   )
 }
@@ -36,10 +105,26 @@ function Hexagon({
   filled = false,
   partial,
   size,
+  interactive = false,
+  highlighted = false,
+  isUserRating = false,
+  dimmed = false,
+  submitting = false,
+  onClick,
+  onHover,
+  onLeave,
 }: {
   filled?: boolean
   partial?: number
   size: number
+  interactive?: boolean
+  highlighted?: boolean
+  isUserRating?: boolean
+  dimmed?: boolean
+  submitting?: boolean
+  onClick?: () => void
+  onHover?: () => void
+  onLeave?: () => void
 }) {
   // Hexagon path: flat-top orientation, centered in viewBox
   const h = size
@@ -65,12 +150,43 @@ function Hexagon({
 
   const clipId = `hex-clip-${Math.random().toString(36).slice(2, 8)}`
 
+  // Color logic:
+  // - User's own rating: doom-500 (brighter)
+  // - Highlighted (hover): doom-400
+  // - Filled (average): doom-400
+  // - Dimmed (beyond hover): noir-700
+  // - Empty: noir-600 outline
+  let fillColor: string
+  let strokeColor: string
+
+  if (isUserRating) {
+    fillColor = 'text-doom-500'
+    strokeColor = 'text-doom-500'
+  } else if (highlighted) {
+    fillColor = 'text-doom-400'
+    strokeColor = 'text-doom-400'
+  } else if (filled) {
+    fillColor = 'text-doom-400'
+    strokeColor = 'text-doom-400'
+  } else if (dimmed) {
+    fillColor = 'text-noir-700'
+    strokeColor = 'text-noir-700'
+  } else {
+    fillColor = 'text-noir-600'
+    strokeColor = 'text-noir-600'
+  }
+
+  const cursorClass = interactive && !submitting ? 'cursor-pointer' : ''
+
   return (
     <svg
       width={viewBoxW}
       height={viewBoxH}
       viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
-      className="shrink-0"
+      className={`shrink-0 ${cursorClass} transition-opacity ${submitting ? 'opacity-50' : ''}`}
+      onClick={onClick}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
     >
       <defs>
         <clipPath id={clipId}>
@@ -83,18 +199,18 @@ function Hexagon({
         fill="none"
         stroke="currentColor"
         strokeWidth={strokeW}
-        className={filled ? 'text-doom-400' : 'text-noir-600'}
+        className={strokeColor}
       />
       {/* Filled area */}
-      {filled && (
+      {(filled || highlighted) && (
         <polygon
           points={points}
           fill="currentColor"
-          className="text-doom-400"
+          className={fillColor}
         />
       )}
       {/* Partial fill from left to right */}
-      {partial !== undefined && partial > 0 && (
+      {partial !== undefined && partial > 0 && !highlighted && (
         <rect
           x={0}
           y={0}

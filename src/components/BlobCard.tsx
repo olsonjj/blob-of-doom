@@ -30,7 +30,7 @@ export function BlobCard({ blob }: { blob: GalleryBlob }) {
           {blob.title}
         </h3>
 
-        {/* Doom Scale */}
+        {/* Doom Scale — read-only average */}
         <HexagonRating rating={blob.averageRating} size={18} />
 
         {/* Meta row */}
