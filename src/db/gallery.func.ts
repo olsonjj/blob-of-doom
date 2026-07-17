@@ -1,0 +1,84 @@
+import { createServerFn } from '@tanstack/react-start'
+import { db } from './index'
+import { blobs, ratings } from './schema'
+import { eq, sql, desc, asc } from 'drizzle-orm'
+
+export type SortField = 'date' | 'doom'
+export type SortOrder = 'asc' | 'desc'
+
+export interface GalleryBlob {
+  id: number
+  title: string
+  description: string | null
+  dateOccurred: string
+  filamentType: string
+  machineUsed: string
+  imageThumbnailUrl: string
+  imageMediumUrl: string
+  imageFullUrl: string
+  uploaderProfileId: string
+  createdAt: Date
+  averageRating: number
+  ratingCount: number
+}
+
+export interface GalleryQueryParams {
+  sort: SortField
+  order: SortOrder
+}
+
+/**
+ * Core query logic — extracted for testability.
+ * Queries blobs with average Doom Scale rating, sorted by the given field and order.
+ */
+export async function queryGallery(params: GalleryQueryParams): Promise<GalleryBlob[]> {
+  const { sort, order } = params
+  const orderFn = order === 'asc' ? asc : desc
+
+  const rows = await db
+    .select({
+      id: blobs.id,
+      title: blobs.title,
+      description: blobs.description,
+      dateOccurred: blobs.dateOccurred,
+      filamentType: blobs.filamentType,
+      machineUsed: blobs.machineUsed,
+      imageThumbnailUrl: blobs.imageThumbnailUrl,
+      imageMediumUrl: blobs.imageMediumUrl,
+      imageFullUrl: blobs.imageFullUrl,
+      uploaderProfileId: blobs.uploaderProfileId,
+      createdAt: blobs.createdAt,
+      averageRating: sql<number>`COALESCE(AVG(${ratings.score}::float), 0)`,
+      ratingCount: sql<number>`COUNT(${ratings.id})::int`,
+    })
+    .from(blobs)
+    .leftJoin(ratings, eq(blobs.id, ratings.blobId))
+    .groupBy(blobs.id)
+    .orderBy(
+      sort === 'doom'
+        ? orderFn(sql`COALESCE(AVG(${ratings.score}::float), 0)`)
+        : orderFn(blobs.createdAt),
+    )
+
+  return rows as unknown as GalleryBlob[]
+}
+
+/**
+ * Validate and coerce raw query params into well-typed GalleryQueryParams.
+ */
+export function parseGalleryParams(raw: {
+  sort?: string
+  order?: string
+}): GalleryQueryParams {
+  const sort: SortField = raw.sort === 'doom' ? 'doom' : 'date'
+  const order: SortOrder = raw.order === 'asc' ? 'asc' : 'desc'
+  return { sort, order }
+}
+
+export const fetchGallery = createServerFn({
+  method: 'GET',
+})
+  .validator((d: { sort?: string; order?: string }) => parseGalleryParams(d))
+  .handler(async ({ data }) => {
+    return queryGallery(data)
+  })
