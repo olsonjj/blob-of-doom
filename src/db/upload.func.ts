@@ -128,6 +128,14 @@ export async function checkUploadLimit(
 
   if (!profile) throw new Error('Profile not found')
 
+  // Approved users bypass the daily upload limit
+  if (profile.approved === 1) {
+    return {
+      currentCount: profile.uploadCountToday,
+      lastDate: profile.lastUploadDate,
+    }
+  }
+
   if (profile.lastUploadDate === today && profile.uploadCountToday >= 1) {
     throw new Error('Upload limit reached. You can upload 1 blob per day.')
   }
