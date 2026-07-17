@@ -17,6 +17,7 @@ export const profiles = pgTable('profiles', {
   lastUploadDate: date('last_upload_date'),
   approved: integer('approved').notNull().default(0), // 0 = default, 1 = approved
   banned: integer('banned').notNull().default(0), // 0 = active, 1 = banned
+  isAdmin: integer('is_admin').notNull().default(0), // 0 = regular user, 1 = admin
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 

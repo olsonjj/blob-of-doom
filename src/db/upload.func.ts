@@ -128,8 +128,8 @@ export async function checkUploadLimit(
 
   if (!profile) throw new Error('Profile not found')
 
-  // Approved users bypass the daily upload limit
-  if (profile.approved === 1) {
+  // Admins bypass the daily upload limit
+  if (profile.isAdmin === 1) {
     return {
       currentCount: profile.uploadCountToday,
       lastDate: profile.lastUploadDate,
