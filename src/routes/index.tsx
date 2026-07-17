@@ -32,7 +32,7 @@ function Home() {
         <div className="absolute inset-0 bg-noir-950/70 backdrop-blur-sm" />
 
         {/* Hero content */}
-        <div className="relative max-w-4xl mx-auto px-4 py-24 text-center">
+        <div className="relative max-w-4xl mx-auto px-4 py-28 text-center">
           <h1 className="text-5xl font-extrabold tracking-tight text-noir-100">
             Engineering Noir Archive
           </h1>
