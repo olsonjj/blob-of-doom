@@ -1,6 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { auth } from '@clerk/tanstack-react-start/server'
 
-export const Route = createFileRoute('/upload/')({ component: Upload })
+export const Route = createFileRoute('/upload/')({
+  beforeLoad: async () => {
+    const { userId } = await auth()
+
+    if (!userId) {
+      throw redirect({
+        to: '/sign-in/$',
+      })
+    }
+  },
+  component: Upload,
+})
 
 function Upload() {
   return (
