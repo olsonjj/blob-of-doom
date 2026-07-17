@@ -80,12 +80,10 @@ export async function incrementViewCount(blobId: number): Promise<number> {
 
 export const fetchBlobDetail = createServerFn({ method: 'GET' })
   .validator((d: unknown) => {
-    const blobId =
-      typeof d === 'object' && d !== null ? (d as Record<string, unknown>).blobId : undefined
-    if (typeof blobId !== 'number' || !Number.isInteger(blobId) || blobId < 1) {
+    if (typeof d !== 'number' || !Number.isInteger(d) || d < 1) {
       throw new Error('Invalid blob ID')
     }
-    return blobId
+    return d
   })
   .handler(async ({ data: blobId }) => {
     // Try to get the current user for personalized rating
