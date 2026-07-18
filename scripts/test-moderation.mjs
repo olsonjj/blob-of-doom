@@ -15,7 +15,13 @@ import { resolve } from 'path'
 const envLocal = readFileSync('.env.local', 'utf-8')
 for (const line of envLocal.split('\n')) {
   const match = line.match(/^([^#][^=]+)=(.*)$/)
-  if (match) process.env[match[1].trim()] = match[2].trim()
+  if (match) {
+    let val = match[2].trim()
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1)
+    }
+    process.env[match[1].trim()] = val
+  }
 }
 
 // Dynamic import of the moderation helper (it's TypeScript, need tsx)
