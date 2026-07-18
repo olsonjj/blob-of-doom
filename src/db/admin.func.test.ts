@@ -182,6 +182,7 @@ describe('setUserApproved', () => {
   })
 
   it('sets approved to true', async () => {
+    selectLimitMock.mockResolvedValueOnce([makeProfile({ isAdmin: 0 })])
     updateReturningMock.mockResolvedValueOnce([{ approved: 1 }])
 
     const result = await setUserApproved('user_1', true)
@@ -190,6 +191,7 @@ describe('setUserApproved', () => {
   })
 
   it('sets approved to false', async () => {
+    selectLimitMock.mockResolvedValueOnce([makeProfile({ isAdmin: 0 })])
     updateReturningMock.mockResolvedValueOnce([{ approved: 0 }])
 
     const result = await setUserApproved('user_1', false)
@@ -198,9 +200,15 @@ describe('setUserApproved', () => {
   })
 
   it('throws when user not found', async () => {
-    updateReturningMock.mockResolvedValueOnce([])
+    selectLimitMock.mockResolvedValueOnce([])
 
     await expect(setUserApproved('user_1', true)).rejects.toThrow('User not found')
+  })
+
+  it('throws when target is an admin', async () => {
+    selectLimitMock.mockResolvedValueOnce([makeProfile({ isAdmin: 1 })])
+
+    await expect(setUserApproved('user_1', true)).rejects.toThrow('Cannot modify admin users')
   })
 })
 
@@ -212,6 +220,7 @@ describe('setUserBanned', () => {
   })
 
   it('sets banned to true', async () => {
+    selectLimitMock.mockResolvedValueOnce([makeProfile({ isAdmin: 0 })])
     updateReturningMock.mockResolvedValueOnce([{ banned: 1 }])
 
     const result = await setUserBanned('user_1', true)
@@ -220,6 +229,7 @@ describe('setUserBanned', () => {
   })
 
   it('sets banned to false', async () => {
+    selectLimitMock.mockResolvedValueOnce([makeProfile({ isAdmin: 0 })])
     updateReturningMock.mockResolvedValueOnce([{ banned: 0 }])
 
     const result = await setUserBanned('user_1', false)
@@ -228,9 +238,15 @@ describe('setUserBanned', () => {
   })
 
   it('throws when user not found', async () => {
-    updateReturningMock.mockResolvedValueOnce([])
+    selectLimitMock.mockResolvedValueOnce([])
 
     await expect(setUserBanned('user_1', true)).rejects.toThrow('User not found')
+  })
+
+  it('throws when target is an admin', async () => {
+    selectLimitMock.mockResolvedValueOnce([makeProfile({ isAdmin: 1 })])
+
+    await expect(setUserBanned('user_1', true)).rejects.toThrow('Cannot modify admin users')
   })
 })
 

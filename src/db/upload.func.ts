@@ -222,24 +222,22 @@ export const uploadBlob = createServerFn({ method: 'POST' })
       })
       .returning()
 
-    // Update profile upload count — flagged uploads don't count toward limit
-    if (!moderation.flagged) {
-      const [profile] = await db
-        .select()
-        .from(profiles)
-        .where(eq(profiles.clerkUserId, userId))
-        .limit(1)
+    // Update profile upload count
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.clerkUserId, userId))
+      .limit(1)
 
-      const newCount =
-        profile && profile.lastUploadDate === today
-          ? profile.uploadCountToday + 1
-          : 1
+    const newCount =
+      profile && profile.lastUploadDate === today
+        ? profile.uploadCountToday + 1
+        : 1
 
-      await db
-        .update(profiles)
-        .set({ uploadCountToday: newCount, lastUploadDate: today })
-        .where(eq(profiles.clerkUserId, userId))
-    }
+    await db
+      .update(profiles)
+      .set({ uploadCountToday: newCount, lastUploadDate: today })
+      .where(eq(profiles.clerkUserId, userId))
 
     return newBlob as Omit<typeof newBlob, 'moderationScores'> & { moderationScores: Record<string, number> | null }
   })

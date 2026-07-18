@@ -1,5 +1,4 @@
 import { createServerFn } from '@tanstack/react-start'
-import { auth } from '@clerk/tanstack-react-start/server'
 import { db } from '../db'
 import { profiles } from '../db/schema'
 import { eq } from 'drizzle-orm'
@@ -7,6 +6,7 @@ import { eq } from 'drizzle-orm'
 export const ensureProfile = createServerFn({
   method: 'POST',
 }).handler(async () => {
+  const { auth } = await import('@clerk/tanstack-react-start/server')
   const { userId } = await auth()
 
   if (!userId) {

@@ -111,6 +111,16 @@ export async function queryAllUsers(): Promise<AdminUser[]> {
 
 export async function setUserApproved(clerkUserId: string, approved: boolean): Promise<boolean> {
   const [db, { profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()])
+
+  // Prevent modification of admin users
+  const [target] = await db
+    .select({ isAdmin: profiles.isAdmin })
+    .from(profiles)
+    .where(eq(profiles.clerkUserId, clerkUserId))
+    .limit(1)
+  if (!target) throw new Error('User not found')
+  if (target.isAdmin === 1) throw new Error('Cannot modify admin users')
+
   const [updated] = await db
     .update(profiles)
     .set({ approved: approved ? 1 : 0 })
@@ -122,6 +132,16 @@ export async function setUserApproved(clerkUserId: string, approved: boolean): P
 
 export async function setUserBanned(clerkUserId: string, banned: boolean): Promise<boolean> {
   const [db, { profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()])
+
+  // Prevent modification of admin users
+  const [target] = await db
+    .select({ isAdmin: profiles.isAdmin })
+    .from(profiles)
+    .where(eq(profiles.clerkUserId, clerkUserId))
+    .limit(1)
+  if (!target) throw new Error('User not found')
+  if (target.isAdmin === 1) throw new Error('Cannot modify admin users')
+
   const [updated] = await db
     .update(profiles)
     .set({ banned: banned ? 1 : 0 })
