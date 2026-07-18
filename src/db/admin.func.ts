@@ -170,11 +170,16 @@ export async function removeBlob(blobId: number): Promise<void> {
     .limit(1);
   if (!blob) throw new Error('Blob not found');
 
+  // Soft-delete the DB row first (preserves metadata for audit/recovery)
+  await db.update(blobs).set({ deleted: 1 }).where(eq(blobs.id, blobId));
+
+  // Then delete from Vercel Blob — best-effort, log failures but don't throw
   const { del } = await import('@vercel/blob');
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   const storeId = process.env.BLOB_STORE_ID;
-  await del([blob.imageThumbnailUrl, blob.imageMediumUrl, blob.imageFullUrl], { token, storeId });
-  await db.delete(blobs).where(eq(blobs.id, blobId));
+  await del([blob.imageThumbnailUrl, blob.imageMediumUrl, blob.imageFullUrl], { token, storeId }).catch((err) => {
+    console.error('Failed to delete Blob files for blobId:', blobId, err);
+  });
 }
 
 // ── Storage stats (extracted for testability) ───────────────────────────────

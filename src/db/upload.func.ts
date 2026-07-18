@@ -1,14 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
 import { eq } from 'drizzle-orm';
 
+import { ALLOWED_TYPES, MAX_FILE_SIZE } from '../shared/constants';
 import { checkNotBanned } from './admin.func';
 import { db } from './index';
 import { blobs, profiles } from './schema';
-
-// ── Constants ───────────────────────────────────────────────────────────────
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,6 +21,13 @@ export interface UploadError {
   field: string;
   message: string;
 }
+
+export type UploadResult =
+  | {
+      success: true;
+      blob: Omit<typeof blobs.$inferSelect, 'moderationScores'> & { moderationScores: Record<string, number> | null };
+    }
+  | { success: false; errors: UploadError[] };
 
 // ── Validation (extracted for testability) ──────────────────────────────────
 
@@ -147,15 +150,14 @@ export async function checkUploadLimit(
 // ── Server function ─────────────────────────────────────────────────────────
 
 export const uploadBlob = createServerFn({ method: 'POST' })
-  .validator((formData: FormData) => {
+  .validator((formData: FormData) => formData)
+  .handler(async ({ data: formData }): Promise<UploadResult> => {
+    // Validate input — return structured errors instead of throwing
     const { data, errors } = validateUploadInput(formData);
     if (errors.length > 0) {
-      throw new Error(JSON.stringify(errors));
+      return { success: false, errors };
     }
-    const validData = data!;
-    return validData;
-  })
-  .handler(async ({ data }) => {
+
     // Auth check — dynamic import keeps server-only code out of the client bundle
     const { auth } = await import('@clerk/tanstack-react-start/server');
     const { userId } = await auth();
@@ -184,6 +186,9 @@ export const uploadBlob = createServerFn({ method: 'POST' })
 
     // Process image, moderate, upload, insert — with rollback on failure
     let newBlob: typeof blobs.$inferSelect | undefined;
+    const uploadedUrls: string[] = [];
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const storeId = process.env.BLOB_STORE_ID;
     try {
       // Process image
       const buffer = Buffer.from(await data.image.arrayBuffer());
@@ -195,8 +200,6 @@ export const uploadBlob = createServerFn({ method: 'POST' })
 
       // Upload to Vercel Blob (dynamic import — server-only package)
       const { put } = await import('@vercel/blob');
-      const token = process.env.BLOB_READ_WRITE_TOKEN;
-      const storeId = process.env.BLOB_STORE_ID;
       const prefix = `blobs/${userId}/${Date.now()}`;
       const [thumbResult, mediumResult, fullResult] = await Promise.all([
         put(`${prefix}-thumb.webp`, variants.thumbnail, {
@@ -219,6 +222,9 @@ export const uploadBlob = createServerFn({ method: 'POST' })
         }),
       ]);
 
+      // Track uploaded URLs for cleanup on failure
+      uploadedUrls.push(thumbResult.url, mediumResult.url, fullResult.url);
+
       // Insert blob record
       const [inserted] = await db
         .insert(blobs)
@@ -239,6 +245,13 @@ export const uploadBlob = createServerFn({ method: 'POST' })
 
       newBlob = inserted;
     } catch (err) {
+      // Best-effort cleanup of orphaned Blob files
+      if (uploadedUrls.length > 0) {
+        const { del } = await import('@vercel/blob');
+        void del(uploadedUrls, { token, storeId }).catch((cleanupErr) => {
+          console.error('Failed to clean up orphaned blobs:', cleanupErr);
+        });
+      }
       // Rollback: decrement the count so the daily slot isn't permanently consumed
       await db
         .update(profiles)
@@ -247,5 +260,8 @@ export const uploadBlob = createServerFn({ method: 'POST' })
       throw err;
     }
 
-    return newBlob as Omit<typeof newBlob, 'moderationScores'> & { moderationScores: Record<string, number> | null };
+    return {
+      success: true,
+      blob: newBlob as Omit<typeof newBlob, 'moderationScores'> & { moderationScores: Record<string, number> | null },
+    };
   });

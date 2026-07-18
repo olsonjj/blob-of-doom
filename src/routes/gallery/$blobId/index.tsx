@@ -120,7 +120,7 @@ function BlobDetailPage() {
     setEditSubmitting(true);
 
     try {
-      await updateBlob({
+      const result = await updateBlob({
         data: {
           blobId: blob!.id,
           title: editTitle,
@@ -131,22 +131,18 @@ function BlobDetailPage() {
         },
       });
 
+      if (!result.success) {
+        setEditErrors(result.errors);
+        return;
+      }
+
       // Refresh the blob data
       const fresh = await fetchBlobDetail({ data: blob!.id });
       setBlob(fresh);
       setEditing(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Update failed';
-      try {
-        const parsed = JSON.parse(message);
-        if (Array.isArray(parsed)) {
-          setEditErrors(parsed);
-        } else {
-          setEditErrors([{ field: 'general', message }]);
-        }
-      } catch {
-        setEditErrors([{ field: 'general', message }]);
-      }
+      setEditErrors([{ field: 'general', message }]);
     } finally {
       setEditSubmitting(false);
     }

@@ -82,7 +82,7 @@ vi.mock('@clerk/tanstack-react-start/server', () => ({
 }));
 
 vi.mock('@vercel/blob', () => ({
-  del: vi.fn(),
+  del: vi.fn().mockResolvedValue(undefined),
   list: vi.fn(),
 }));
 
@@ -259,7 +259,7 @@ describe('removeBlob', () => {
     vi.clearAllMocks();
   });
 
-  it('deletes blob from database and Vercel Blob', async () => {
+  it('soft-deletes blob from database and deletes from Vercel Blob', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'test-token';
     process.env.BLOB_STORE_ID = 'test-store';
 
@@ -275,11 +275,16 @@ describe('removeBlob', () => {
 
     await removeBlob(1);
 
+    // DB row soft-deleted (not hard-deleted)
+    expect(updateSetMock).toHaveBeenCalledWith({ deleted: 1 });
+    expect(updateWhereMock).toHaveBeenCalled();
+    expect(deleteWhereMock).not.toHaveBeenCalled();
+
+    // Vercel Blob files deleted
     expect(del).toHaveBeenCalledWith(
       ['https://blob.vercel/thumb.webp', 'https://blob.vercel/medium.webp', 'https://blob.vercel/full.webp'],
       { token: 'test-token', storeId: 'test-store' },
     );
-    expect(deleteWhereMock).toHaveBeenCalled();
 
     delete process.env.BLOB_READ_WRITE_TOKEN;
     delete process.env.BLOB_STORE_ID;

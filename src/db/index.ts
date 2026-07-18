@@ -12,22 +12,28 @@ import * as schema from './schema';
  * runtimes where env is injected per-request. This getter defers the read
  * until the first actual query.
  */
-let _db: NeonHttpDatabase<typeof schema> | null = null;
+let dbInstance: NeonHttpDatabase<typeof schema> | null = null;
 
 function getDb(): NeonHttpDatabase<typeof schema> {
-  if (!_db) {
+  if (!dbInstance) {
     const sql = neon(process.env.DATABASE_URL!);
-    _db = drizzle(sql, { schema });
+    dbInstance = drizzle(sql, { schema });
   }
-  return _db;
+  return dbInstance;
 }
 
 /**
- * Drop-in replacement for the old `db` export.
- * Every query goes through the getter so DATABASE_URL is read lazily.
+ * Typed Proxy that preserves Drizzle ORM types while deferring initialization.
+ * Every property access lazily creates the real DB connection on first use.
  */
-export const db = new Proxy({} as NeonHttpDatabase<typeof schema>, {
-  get(_, prop) {
-    return (getDb() as unknown as Record<string | symbol, unknown>)[prop];
-  },
-});
+function createLazyDb(): NeonHttpDatabase<typeof schema> {
+  const target = {} as NeonHttpDatabase<typeof schema>;
+  return new Proxy(target, {
+    get(_, prop) {
+      const realDb = getDb();
+      return Reflect.get(realDb, prop);
+    },
+  });
+}
+
+export const db = createLazyDb();

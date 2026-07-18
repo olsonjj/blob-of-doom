@@ -15,6 +15,13 @@ export interface UpdateBlobInput {
   machineUsed: string;
 }
 
+export interface UpdateBlobError {
+  field: string;
+  message: string;
+}
+
+export type UpdateBlobResult = { success: true } | { success: false; errors: UpdateBlobError[] };
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getUserId(): Promise<string> {
@@ -68,11 +75,9 @@ export async function softDeleteBlobRecord(blobId: number, userId: string): Prom
 // ── Server functions ────────────────────────────────────────────────────────
 
 export const updateBlob = createServerFn({ method: 'POST' })
-  .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null) throw new Error('Invalid input');
-
-    const input = d as Record<string, unknown>;
-    const errors: { field: string; message: string }[] = [];
+  .validator((d: unknown) => d as Record<string, unknown>)
+  .handler(async ({ data: input }): Promise<UpdateBlobResult> => {
+    const errors: UpdateBlobError[] = [];
 
     if (typeof input.blobId !== 'number') errors.push({ field: 'blobId', message: 'Blob ID is required' });
     if (typeof input.title !== 'string' || !input.title.trim())
@@ -84,20 +89,19 @@ export const updateBlob = createServerFn({ method: 'POST' })
     if (typeof input.machineUsed !== 'string' || !input.machineUsed.trim())
       errors.push({ field: 'machineUsed', message: 'Machine used is required' });
 
-    if (errors.length > 0) throw new Error(JSON.stringify(errors));
+    if (errors.length > 0) return { success: false, errors };
 
-    return {
+    const validated: UpdateBlobInput = {
       blobId: input.blobId as number,
       title: (input.title as string).trim(),
       description: typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null,
       dateOccurred: input.dateOccurred as string,
       filamentType: (input.filamentType as string).trim(),
       machineUsed: (input.machineUsed as string).trim(),
-    } satisfies UpdateBlobInput;
-  })
-  .handler(async ({ data }) => {
+    };
+
     const userId = await getUserId();
-    return updateBlobRecord(data, userId);
+    return updateBlobRecord(validated, userId);
   });
 
 export const softDeleteBlob = createServerFn({ method: 'POST' })

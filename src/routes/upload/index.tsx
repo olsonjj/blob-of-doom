@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { requireAuth } from '../../db/auth-guards.func';
 import { uploadBlob, type UploadError } from '../../db/upload.func';
+import { ALLOWED_TYPES, MAX_FILE_SIZE } from '../../shared/constants';
 
 export const Route = createFileRoute('/upload/')({
   // `requireAuth` is a createServerFn — RPC'd to the server on SPA nav
@@ -12,11 +13,6 @@ export const Route = createFileRoute('/upload/')({
   beforeLoad: async () => await requireAuth(),
   component: UploadPage,
 });
-
-// ── Constants ───────────────────────────────────────────────────────────────
-
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 // ── Page component ──────────────────────────────────────────────────────────
 
@@ -135,12 +131,17 @@ function UploadPage() {
 
       const result = await uploadBlob({ data: formData });
 
+      if (!result.success) {
+        setErrors(result.errors);
+        return;
+      }
+
       setSuccess(true);
-      if (result.flagged === 1) {
+      if (result.blob.flagged === 1) {
         setFlagged(true);
         if (
-          result.moderationScores &&
-          (result.moderationScores as Record<string, number>).moderationUnavailable === 1
+          result.blob.moderationScores &&
+          (result.blob.moderationScores as Record<string, number>).moderationUnavailable === 1
         ) {
           setModerationUnavailable(true);
         }
@@ -152,17 +153,7 @@ function UploadPage() {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Upload failed';
-      // Try to parse structured validation errors from the server
-      try {
-        const parsed = JSON.parse(message);
-        if (Array.isArray(parsed)) {
-          setErrors(parsed);
-        } else {
-          setServerError(message);
-        }
-      } catch {
-        setServerError(message);
-      }
+      setServerError(message);
     } finally {
       setSubmitting(false);
     }
