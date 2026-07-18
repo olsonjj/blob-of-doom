@@ -1,26 +1,27 @@
-import { createServerFn } from '@tanstack/react-start'
-import { db } from './index'
-import { blobs, ratings } from './schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { createServerFn } from '@tanstack/react-start';
+import { and, eq, sql } from 'drizzle-orm';
+
+import { db } from './index';
+import { blobs, ratings } from './schema';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface BlobDetail {
-  id: number
-  title: string
-  description: string | null
-  dateOccurred: string
-  filamentType: string
-  machineUsed: string
-  imageThumbnailUrl: string
-  imageMediumUrl: string
-  imageFullUrl: string
-  uploaderProfileId: string
-  viewCount: number
-  createdAt: Date
-  averageRating: number
-  ratingCount: number
-  userRating: number | null
+  id: number;
+  title: string;
+  description: string | null;
+  dateOccurred: string;
+  filamentType: string;
+  machineUsed: string;
+  imageThumbnailUrl: string;
+  imageMediumUrl: string;
+  imageFullUrl: string;
+  uploaderProfileId: string;
+  viewCount: number;
+  createdAt: Date;
+  averageRating: number;
+  ratingCount: number;
+  userRating: number | null;
 }
 
 // ── Query (extracted for testability) ───────────────────────────────────────
@@ -28,10 +29,7 @@ export interface BlobDetail {
 /**
  * Fetch a single blob with its average rating and optionally the current user's rating.
  */
-export async function queryBlobDetail(
-  blobId: number,
-  userId?: string,
-): Promise<BlobDetail | null> {
+export async function queryBlobDetail(blobId: number, userId?: string): Promise<BlobDetail | null> {
   const rows = await db
     .select({
       id: blobs.id,
@@ -56,9 +54,9 @@ export async function queryBlobDetail(
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
     .where(and(eq(blobs.id, blobId), eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .groupBy(blobs.id)
-    .limit(1)
+    .limit(1);
 
-  return (rows[0] as BlobDetail | undefined) ?? null
+  return (rows[0] as BlobDetail | undefined) ?? null;
 }
 
 // ── View increment (extracted for testability) ──────────────────────────────
@@ -71,9 +69,9 @@ export async function incrementViewCount(blobId: number): Promise<number> {
     .update(blobs)
     .set({ viewCount: sql`${blobs.viewCount} + 1` })
     .where(eq(blobs.id, blobId))
-    .returning({ viewCount: blobs.viewCount })
+    .returning({ viewCount: blobs.viewCount });
 
-  return updated?.viewCount ?? 0
+  return updated?.viewCount ?? 0;
 }
 
 // ── Server function ─────────────────────────────────────────────────────────
@@ -81,28 +79,28 @@ export async function incrementViewCount(blobId: number): Promise<number> {
 export const fetchBlobDetail = createServerFn({ method: 'GET' })
   .validator((d: unknown) => {
     if (typeof d !== 'number' || !Number.isInteger(d) || d < 1) {
-      throw new Error('Invalid blob ID')
+      throw new Error('Invalid blob ID');
     }
-    return d
+    return d;
   })
   .handler(async ({ data: blobId }) => {
     // Try to get the current user for personalized rating
-    let userId: string | undefined
+    let userId: string | undefined;
     try {
-      const { auth } = await import('@clerk/tanstack-react-start/server')
-      const { userId: uid } = await auth()
-      userId = uid ?? undefined
+      const { auth } = await import('@clerk/tanstack-react-start/server');
+      const { userId: uid } = await auth();
+      userId = uid ?? undefined;
     } catch {
       // Auth not available — proceed without user-specific data
     }
 
     // Increment view count (fire-and-forget, don't block the response)
     incrementViewCount(blobId).catch((err) => {
-      console.error('incrementViewCount failed:', err)
-    })
+      console.error('incrementViewCount failed:', err);
+    });
 
-    const detail = await queryBlobDetail(blobId, userId)
-    if (!detail) throw new Error('Blob not found')
+    const detail = await queryBlobDetail(blobId, userId);
+    if (!detail) throw new Error('Blob not found');
 
-    return detail
-  })
+    return detail;
+  });

@@ -12,19 +12,19 @@ Images are uploaded to Vercel Blob before the DB insert. If the insert fails, th
 Track uploaded URLs and attempt best-effort cleanup in a try/catch:
 
 ```ts
-const uploadedUrls: string[] = []
+const uploadedUrls: string[] = [];
 try {
   // ... upload to Blob, collect URLs
-  uploadedUrls.push(thumbResult.url, mediumResult.url, fullResult.url)
+  uploadedUrls.push(thumbResult.url, mediumResult.url, fullResult.url);
   // ... DB insert
 } catch (err) {
   if (uploadedUrls.length > 0) {
-    const { del } = await import('@vercel/blob')
+    const { del } = await import('@vercel/blob');
     del(uploadedUrls, { token, storeId }).catch((cleanupErr) => {
-      console.error('Failed to clean up orphaned blobs:', cleanupErr)
-    })
+      console.error('Failed to clean up orphaned blobs:', cleanupErr);
+    });
   }
-  throw err
+  throw err;
 }
 ```
 

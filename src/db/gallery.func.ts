@@ -1,32 +1,33 @@
-import { createServerFn } from '@tanstack/react-start'
-import { db } from './index'
-import { blobs, ratings } from './schema'
-import { eq, and, sql, desc, asc } from 'drizzle-orm'
+import { createServerFn } from '@tanstack/react-start';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
-export type SortField = 'date' | 'doom'
-export type SortOrder = 'asc' | 'desc'
+import { db } from './index';
+import { blobs, ratings } from './schema';
+
+export type SortField = 'date' | 'doom';
+export type SortOrder = 'asc' | 'desc';
 
 export interface GalleryBlob {
-  id: number
-  title: string
-  description: string | null
-  dateOccurred: string
-  filamentType: string
-  machineUsed: string
-  imageThumbnailUrl: string
-  imageMediumUrl: string
-  imageFullUrl: string
-  uploaderProfileId: string
-  createdAt: Date
-  averageRating: number
-  ratingCount: number
-  flagged: number
-  moderationScores: Record<string, number> | null
+  id: number;
+  title: string;
+  description: string | null;
+  dateOccurred: string;
+  filamentType: string;
+  machineUsed: string;
+  imageThumbnailUrl: string;
+  imageMediumUrl: string;
+  imageFullUrl: string;
+  uploaderProfileId: string;
+  createdAt: Date;
+  averageRating: number;
+  ratingCount: number;
+  flagged: number;
+  moderationScores: Record<string, number> | null;
 }
 
 export interface GalleryQueryParams {
-  sort: SortField
-  order: SortOrder
+  sort: SortField;
+  order: SortOrder;
 }
 
 /**
@@ -34,8 +35,8 @@ export interface GalleryQueryParams {
  * Queries blobs with average Doom Scale rating, sorted by the given field and order.
  */
 export async function queryGallery(params: GalleryQueryParams): Promise<GalleryBlob[]> {
-  const { sort, order } = params
-  const orderFn = order === 'asc' ? asc : desc
+  const { sort, order } = params;
+  const orderFn = order === 'asc' ? asc : desc;
 
   const rows = await db
     .select({
@@ -59,25 +60,18 @@ export async function queryGallery(params: GalleryQueryParams): Promise<GalleryB
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
     .where(and(eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .groupBy(blobs.id)
-    .orderBy(
-      sort === 'doom'
-        ? orderFn(sql`COALESCE(AVG(${ratings.score}::float), 0)`)
-        : orderFn(blobs.createdAt),
-    )
+    .orderBy(sort === 'doom' ? orderFn(sql`COALESCE(AVG(${ratings.score}::float), 0)`) : orderFn(blobs.createdAt));
 
-  return rows as unknown as GalleryBlob[]
+  return rows as unknown as GalleryBlob[];
 }
 
 /**
  * Validate and coerce raw query params into well-typed GalleryQueryParams.
  */
-export function parseGalleryParams(raw: {
-  sort?: string
-  order?: string
-}): GalleryQueryParams {
-  const sort: SortField = raw.sort === 'doom' ? 'doom' : 'date'
-  const order: SortOrder = raw.order === 'asc' ? 'asc' : 'desc'
-  return { sort, order }
+export function parseGalleryParams(raw: { sort?: string; order?: string }): GalleryQueryParams {
+  const sort: SortField = raw.sort === 'doom' ? 'doom' : 'date';
+  const order: SortOrder = raw.order === 'asc' ? 'asc' : 'desc';
+  return { sort, order };
 }
 
 export const fetchGallery = createServerFn({
@@ -85,5 +79,5 @@ export const fetchGallery = createServerFn({
 })
   .validator((d: { sort?: string; order?: string }) => parseGalleryParams(d))
   .handler(async ({ data }) => {
-    return queryGallery(data)
-  })
+    return queryGallery(data);
+  });

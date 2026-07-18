@@ -9,7 +9,7 @@
 
 ## What to do
 
-**Use Option A (increment-first):** Move the count increment to *before* image processing, moderation, and Blob upload. If any subsequent step fails, decrement the count back. This closes the race window without holding a long-lived row lock.
+**Use Option A (increment-first):** Move the count increment to _before_ image processing, moderation, and Blob upload. If any subsequent step fails, decrement the count back. This closes the race window without holding a long-lived row lock.
 
 ```
 1. Check limit (read)

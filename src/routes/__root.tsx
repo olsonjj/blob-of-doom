@@ -1,11 +1,11 @@
-import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@clerk/tanstack-react-start'
-import { HeadContent, Scripts, createRootRoute, Link } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-import { EnsureProfile } from '../components/EnsureProfile'
-import { AdminNavLink } from '../components/AdminNavLink'
+import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@clerk/tanstack-react-start';
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import { createRootRoute, HeadContent, Link, Scripts } from '@tanstack/react-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
-import appCss from '../styles.css?url'
+import { AdminNavLink } from '../components/AdminNavLink';
+import { EnsureProfile } from '../components/EnsureProfile';
+import appCss from '../styles.css?url';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -14,12 +14,10 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Blob of Doom — Engineering Noir Archive' },
     ],
-    links: [
-      { rel: 'stylesheet', href: appCss },
-    ],
+    links: [{ rel: 'stylesheet', href: appCss }],
   }),
   shellComponent: RootDocument,
-})
+});
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -61,9 +59,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <nav className="flex items-center gap-4 sm:gap-5 text-xs font-black uppercase tracking-[0.1em] text-[#d9afa5]">
                 <Show when="signed-out">
                   <SignInButton mode="modal">
-                    <button className="hover:text-white transition-colors cursor-pointer">
-                      Sign In
-                    </button>
+                    <button className="hover:text-white transition-colors cursor-pointer">Sign In</button>
                   </SignInButton>
                   <SignUpButton mode="modal">
                     <button className="px-3 sm:px-4 py-1.5 bg-[#ff5a0a] text-[#14100e] font-black hover:bg-[#ff7a1a] transition-colors cursor-pointer">
@@ -92,9 +88,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </header>
 
           <EnsureProfile />
-          <main className="flex-1">
-            {children}
-          </main>
+          <main className="flex-1">{children}</main>
 
           <footer className="border-t border-noir-800 py-8 text-center text-noir-400 text-sm">
             <p>Blob of Doom &copy; {new Date().getFullYear()} — Engineering Noir Archive</p>
@@ -103,13 +97,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
           <TanStackDevtools
             config={{ position: 'bottom-right' }}
-            plugins={[
-              { name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> },
-            ]}
+            plugins={[{ name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> }]}
           />
           <Scripts />
         </ClerkProvider>
       </body>
     </html>
-  )
+  );
 }

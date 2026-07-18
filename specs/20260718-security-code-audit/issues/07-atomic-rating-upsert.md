@@ -19,7 +19,7 @@ const [upserted] = await db
     target: [ratings.blobId, ratings.raterProfileId],
     set: { score, updatedAt: new Date() },
   })
-  .returning()
+  .returning();
 ```
 
 ## Acceptance criteria

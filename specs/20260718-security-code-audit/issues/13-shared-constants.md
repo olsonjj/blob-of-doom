@@ -12,8 +12,8 @@
 Create `src/shared/constants.ts`:
 
 ```ts
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
 ```
 
 Import from both locations. Ensure the shared file has no server-only imports (safe for client bundle).

@@ -1,10 +1,10 @@
-import { SignIn } from '@clerk/tanstack-react-start'
-import { createFileRoute } from '@tanstack/react-router'
-import { Skull } from 'lucide-react'
+import { SignIn } from '@clerk/tanstack-react-start';
+import { createFileRoute } from '@tanstack/react-router';
+import { Skull } from 'lucide-react';
 
 export const Route = createFileRoute('/sign-in/$')({
   component: SignInPage,
-})
+});
 
 function SignInPage() {
   return (
@@ -43,5 +43,5 @@ function SignInPage() {
         }}
       />
     </div>
-  )
+  );
 }

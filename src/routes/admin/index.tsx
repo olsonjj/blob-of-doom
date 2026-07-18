@@ -1,54 +1,55 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useCallback } from 'react'
+import { createFileRoute } from '@tanstack/react-router';
 import {
-  Shield,
-  Users,
+  AlertTriangle,
+  Ban,
+  CheckCircle,
+  Eye,
+  Flag,
   HardDrive,
   Image,
-  CheckCircle,
-  XCircle,
-  Ban,
-  Trash2,
-  AlertTriangle,
   RefreshCw,
-  Flag,
-  Eye,
-} from 'lucide-react'
+  Shield,
+  Trash2,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
 import {
-  getUsers,
-  approveUser,
-  unapproveUser,
-  banUser,
-  unbanUser,
-  deleteBlob,
-  getStorageStats,
-  getFlaggedBlobs,
-  approveFlaggedBlob,
-  rejectFlaggedBlob,
   type AdminUser,
-  type StorageStats,
+  approveFlaggedBlob,
+  approveUser,
+  banUser,
+  deleteBlob,
   type FlaggedBlob,
-} from '../../db/admin.func'
-import { fetchGallery, type GalleryBlob } from '../../db/gallery.func'
-import { requireAdmin } from '../../db/auth-guards.func'
+  getFlaggedBlobs,
+  getStorageStats,
+  getUsers,
+  rejectFlaggedBlob,
+  type StorageStats,
+  unapproveUser,
+  unbanUser,
+} from '../../db/admin.func';
+import { requireAdmin } from '../../db/auth-guards.func';
+import { fetchGallery, type GalleryBlob } from '../../db/gallery.func';
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async () => await requireAdmin(),
   component: AdminDashboard,
-})
+});
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  const size = bytes / Math.pow(1024, i)
-  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = bytes / Math.pow(1024, i);
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 // ── Confirmation Modal ──────────────────────────────────────────────────────
@@ -62,31 +63,26 @@ function ConfirmModal({
   onConfirm,
   onCancel,
 }: {
-  open: boolean
-  title: string
-  message: string
-  confirmLabel: string
-  confirmVariant: 'danger' | 'warning'
-  onConfirm: () => void
-  onCancel: () => void
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  confirmVariant: 'danger' | 'warning';
+  onConfirm: () => void;
+  onCancel: () => void;
 }) {
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-noir-950/80 backdrop-blur-sm"
-        onClick={onCancel}
-      />
+      <div className="absolute inset-0 bg-noir-950/80 backdrop-blur-sm" onClick={onCancel} />
       {/* Dialog */}
       <div className="relative bg-noir-900 border border-noir-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
         <div className="flex items-start gap-3 mb-4">
           <div
             className={`p-2 rounded-lg shrink-0 ${
-              confirmVariant === 'danger'
-                ? 'bg-doom-500/10 text-doom-400'
-                : 'bg-yellow-500/10 text-yellow-400'
+              confirmVariant === 'danger' ? 'bg-doom-500/10 text-doom-400' : 'bg-yellow-500/10 text-yellow-400'
             }`}
           >
             <AlertTriangle className="w-5 h-5" />
@@ -106,9 +102,7 @@ function ConfirmModal({
           <button
             onClick={onConfirm}
             className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors cursor-pointer ${
-              confirmVariant === 'danger'
-                ? 'bg-doom-500 hover:bg-doom-400'
-                : 'bg-yellow-600 hover:bg-yellow-500'
+              confirmVariant === 'danger' ? 'bg-doom-500 hover:bg-doom-400' : 'bg-yellow-600 hover:bg-yellow-500'
             }`}
           >
             {confirmLabel}
@@ -116,15 +110,13 @@ function ConfirmModal({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // ── Storage Stats Cards ─────────────────────────────────────────────────────
 
 function StorageCards({ stats, loading }: { stats: StorageStats | null; loading: boolean }) {
-  const usagePercent = stats
-    ? Math.min(100, (stats.totalSizeBytes / stats.capacityBytes) * 100)
-    : 0
+  const usagePercent = stats ? Math.min(100, (stats.totalSizeBytes / stats.capacityBytes) * 100) : 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -134,20 +126,14 @@ function StorageCards({ stats, loading }: { stats: StorageStats | null; loading:
           <div className="p-2 bg-doom-500/10 rounded-lg">
             <Image className="w-5 h-5 text-doom-400" />
           </div>
-          <span className="text-xs font-medium text-noir-400 uppercase tracking-wider">
-            Images Stored
-          </span>
+          <span className="text-xs font-medium text-noir-400 uppercase tracking-wider">Images Stored</span>
         </div>
         {loading ? (
           <div className="h-8 bg-noir-800 rounded animate-pulse w-16" />
         ) : (
-          <p className="text-3xl font-bold text-noir-100">
-            {stats?.blobCount ?? 0}
-          </p>
+          <p className="text-3xl font-bold text-noir-100">{stats?.blobCount ?? 0}</p>
         )}
-        <p className="mt-1 text-xs text-noir-500">
-          Across all variants (thumbnail, medium, full)
-        </p>
+        <p className="mt-1 text-xs text-noir-500">Across all variants (thumbnail, medium, full)</p>
       </div>
 
       {/* Total size */}
@@ -156,16 +142,12 @@ function StorageCards({ stats, loading }: { stats: StorageStats | null; loading:
           <div className="p-2 bg-blue-500/10 rounded-lg">
             <HardDrive className="w-5 h-5 text-blue-400" />
           </div>
-          <span className="text-xs font-medium text-noir-400 uppercase tracking-wider">
-            Storage Used
-          </span>
+          <span className="text-xs font-medium text-noir-400 uppercase tracking-wider">Storage Used</span>
         </div>
         {loading ? (
           <div className="h-8 bg-noir-800 rounded animate-pulse w-24" />
         ) : (
-          <p className="text-3xl font-bold text-noir-100">
-            {stats ? formatBytes(stats.totalSizeBytes) : '—'}
-          </p>
+          <p className="text-3xl font-bold text-noir-100">{stats ? formatBytes(stats.totalSizeBytes) : '—'}</p>
         )}
         <p className="mt-1 text-xs text-noir-500">Cumulative size of all blobs</p>
       </div>
@@ -176,16 +158,12 @@ function StorageCards({ stats, loading }: { stats: StorageStats | null; loading:
           <div className="p-2 bg-green-500/10 rounded-lg">
             <HardDrive className="w-5 h-5 text-green-400" />
           </div>
-          <span className="text-xs font-medium text-noir-400 uppercase tracking-wider">
-            Capacity
-          </span>
+          <span className="text-xs font-medium text-noir-400 uppercase tracking-wider">Capacity</span>
         </div>
         {loading ? (
           <div className="h-8 bg-noir-800 rounded animate-pulse w-24" />
         ) : (
-          <p className="text-3xl font-bold text-noir-100">
-            {stats ? formatBytes(stats.capacityBytes) : '—'}
-          </p>
+          <p className="text-3xl font-bold text-noir-100">{stats ? formatBytes(stats.capacityBytes) : '—'}</p>
         )}
         {/* Usage bar */}
         {stats && (
@@ -193,23 +171,17 @@ function StorageCards({ stats, loading }: { stats: StorageStats | null; loading:
             <div className="h-1.5 bg-noir-800 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  usagePercent > 90
-                    ? 'bg-doom-500'
-                    : usagePercent > 70
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
+                  usagePercent > 90 ? 'bg-doom-500' : usagePercent > 70 ? 'bg-yellow-500' : 'bg-green-500'
                 }`}
                 style={{ width: `${usagePercent}%` }}
               />
             </div>
-            <p className="mt-1 text-xs text-noir-500">
-              {usagePercent.toFixed(1)}% used
-            </p>
+            <p className="mt-1 text-xs text-noir-500">{usagePercent.toFixed(1)}% used</p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ── User Row ────────────────────────────────────────────────────────────────
@@ -219,9 +191,9 @@ function UserRow({
   onToggleApproved,
   onToggleBanned,
 }: {
-  user: AdminUser
-  onToggleApproved: (clerkUserId: string, current: boolean) => void
-  onToggleBanned: (clerkUserId: string, current: boolean) => void
+  user: AdminUser;
+  onToggleApproved: (clerkUserId: string, current: boolean) => void;
+  onToggleBanned: (clerkUserId: string, current: boolean) => void;
 }) {
   const statusBadge = user.banned
     ? { label: 'Banned', className: 'bg-doom-500/10 text-doom-400 border-doom-500/30' }
@@ -229,7 +201,7 @@ function UserRow({
       ? { label: 'Admin', className: 'bg-purple-500/10 text-purple-400 border-purple-500/30' }
       : user.approved
         ? { label: 'Approved', className: 'bg-green-500/10 text-green-400 border-green-500/30' }
-        : { label: 'Default', className: 'bg-noir-600/50 text-noir-300 border-noir-600' }
+        : { label: 'Default', className: 'bg-noir-600/50 text-noir-300 border-noir-600' };
 
   return (
     <tr className="border-b border-noir-800 hover:bg-noir-800/50 transition-colors">
@@ -237,11 +209,7 @@ function UserRow({
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
           {user.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt=""
-              className="w-8 h-8 rounded-full bg-noir-700 shrink-0"
-            />
+            <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full bg-noir-700 shrink-0" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-noir-700 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4 text-noir-400" />
@@ -256,18 +224,14 @@ function UserRow({
 
       {/* Status */}
       <td className="py-3 px-2">
-        <span
-          className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full border ${statusBadge.className}`}
-        >
+        <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full border ${statusBadge.className}`}>
           {statusBadge.label}
         </span>
       </td>
 
       {/* Uploads today */}
       <td className="py-3 px-2 text-center">
-        <span className="text-sm text-noir-300 tabular-nums">
-          {user.uploadCountToday}
-        </span>
+        <span className="text-sm text-noir-300 tabular-nums">{user.uploadCountToday}</span>
       </td>
 
       {/* Actions */}
@@ -299,17 +263,13 @@ function UserRow({
               }`}
               title={user.banned ? 'Unban user' : 'Ban user'}
             >
-              {user.banned ? (
-                <XCircle className="w-4 h-4" />
-              ) : (
-                <Ban className="w-4 h-4" />
-              )}
+              {user.banned ? <XCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
             </button>
           )}
         </div>
       </td>
     </tr>
-  )
+  );
 }
 
 // ── Blob Management Row ─────────────────────────────────────────────────────
@@ -319,19 +279,19 @@ const MODERATION_CATEGORIES: { key: string; label: string }[] = [
   { key: 'weapons', label: 'Weapons' },
   { key: 'alcohol', label: 'Alcohol' },
   { key: 'drugs', label: 'Drugs' },
-]
+];
 
 function ModerationBadges({ scores }: { scores: Record<string, number> | null }) {
-  if (!scores) return null
-  const entries = MODERATION_CATEGORIES.filter(({ key }) => typeof scores[key] === 'number')
-  if (entries.length === 0) return null
+  if (!scores) return null;
+  const entries = MODERATION_CATEGORIES.filter(({ key }) => typeof scores[key] === 'number');
+  if (entries.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {entries.map(({ key, label }) => {
-        const score = scores[key]
-        const isHigh = score >= 0.7
-        const isMedium = score >= 0.4 && score < 0.7
+        const score = scores[key];
+        const isHigh = score >= 0.7;
+        const isMedium = score >= 0.4 && score < 0.7;
         return (
           <span
             key={key}
@@ -345,43 +305,27 @@ function ModerationBadges({ scores }: { scores: Record<string, number> | null })
           >
             {label} {(score * 100).toFixed(0)}%
           </span>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
-function BlobRow({
-  blob,
-  onDelete,
-}: {
-  blob: GalleryBlob
-  onDelete: (blobId: number) => void
-}) {
+function BlobRow({ blob, onDelete }: { blob: GalleryBlob; onDelete: (blobId: number) => void }) {
   return (
     <tr className="border-b border-noir-800 hover:bg-noir-800/50 transition-colors">
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <img
-            src={blob.imageThumbnailUrl}
-            alt=""
-            className="w-10 h-10 rounded-lg object-cover bg-noir-800 shrink-0"
-          />
+          <img src={blob.imageThumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover bg-noir-800 shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-noir-100 truncate max-w-xs">
-              {blob.title}
-            </p>
-            <p className="text-xs text-noir-400">
-              {new Date(blob.createdAt).toLocaleDateString()}
-            </p>
+            <p className="text-sm font-medium text-noir-100 truncate max-w-xs">{blob.title}</p>
+            <p className="text-xs text-noir-400">{new Date(blob.createdAt).toLocaleDateString()}</p>
             <ModerationBadges scores={blob.moderationScores} />
           </div>
         </div>
       </td>
       <td className="py-3 px-2 text-sm text-noir-300">{blob.filamentType}</td>
-      <td className="py-3 px-2 text-sm text-noir-300 text-center tabular-nums">
-        {blob.averageRating.toFixed(1)}
-      </td>
+      <td className="py-3 px-2 text-sm text-noir-300 text-center tabular-nums">{blob.averageRating.toFixed(1)}</td>
       <td className="py-3 px-2 text-right">
         <button
           onClick={() => onDelete(blob.id)}
@@ -392,7 +336,7 @@ function BlobRow({
         </button>
       </td>
     </tr>
-  )
+  );
 }
 
 // ── Flagged Blob Card ───────────────────────────────────────────────────────
@@ -402,11 +346,11 @@ function FlaggedBlobCard({
   onApprove,
   onReject,
 }: {
-  blob: FlaggedBlob
-  onApprove: (blobId: number) => void
-  onReject: (blobId: number) => void
+  blob: FlaggedBlob;
+  onApprove: (blobId: number) => void;
+  onReject: (blobId: number) => void;
 }) {
-  const scores = blob.moderationScores ?? {}
+  const scores = blob.moderationScores ?? {};
 
   return (
     <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors">
@@ -425,23 +369,13 @@ function FlaggedBlobCard({
           <div>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-noir-100">
-                  {blob.title}
-                </h3>
-                {blob.description && (
-                  <p className="text-xs text-noir-400 mt-0.5 line-clamp-2">
-                    {blob.description}
-                  </p>
-                )}
+                <h3 className="text-sm font-semibold text-noir-100">{blob.title}</h3>
+                {blob.description && <p className="text-xs text-noir-400 mt-0.5 line-clamp-2">{blob.description}</p>}
               </div>
               {/* Uploader info */}
               <div className="flex items-center gap-2 shrink-0">
                 {blob.uploaderAvatarUrl ? (
-                  <img
-                    src={blob.uploaderAvatarUrl}
-                    alt=""
-                    className="w-6 h-6 rounded-full bg-noir-700"
-                  />
+                  <img src={blob.uploaderAvatarUrl} alt="" className="w-6 h-6 rounded-full bg-noir-700" />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-noir-700 flex items-center justify-center">
                     <Users className="w-3 h-3 text-noir-400" />
@@ -470,15 +404,13 @@ function FlaggedBlobCard({
 
             {/* Moderation scores */}
             <div className="mt-3">
-              <p className="text-xs font-medium text-noir-400 mb-1.5">
-                Moderation Scores
-              </p>
+              <p className="text-xs font-medium text-noir-400 mb-1.5">Moderation Scores</p>
               <div className="flex flex-wrap gap-2">
                 {MODERATION_CATEGORIES.map(({ key, label }) => {
-                  const score = scores[key]
-                  const hasScore = typeof score === 'number'
-                  const isHigh = hasScore && score >= 0.7
-                  const isMedium = hasScore && score >= 0.4 && score < 0.7
+                  const score = scores[key];
+                  const hasScore = typeof score === 'number';
+                  const isHigh = hasScore && score >= 0.7;
+                  const isMedium = hasScore && score >= 0.4 && score < 0.7;
 
                   return (
                     <div
@@ -491,12 +423,9 @@ function FlaggedBlobCard({
                             : 'bg-noir-800 text-noir-400 border-noir-700'
                       }`}
                     >
-                      {label}{' '}
-                      <span className="tabular-nums ml-0.5">
-                        {hasScore ? formatPercent(score) : '—'}
-                      </span>
+                      {label} <span className="tabular-nums ml-0.5">{hasScore ? formatPercent(score) : '—'}</span>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -531,106 +460,106 @@ function FlaggedBlobCard({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 
-type Tab = 'users' | 'blobs' | 'flagged'
+type Tab = 'users' | 'blobs' | 'flagged';
 
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('users')
+  const [activeTab, setActiveTab] = useState<Tab>('users');
 
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [usersLoading, setUsersLoading] = useState(true)
-  const [usersError, setUsersError] = useState<string | null>(null)
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
-  const [storageStats, setStorageStats] = useState<StorageStats | null>(null)
-  const [storageLoading, setStorageLoading] = useState(true)
-  const [storageError, setStorageError] = useState<string | null>(null)
+  const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
+  const [storageLoading, setStorageLoading] = useState(true);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
-  const [blobs, setBlobs] = useState<GalleryBlob[]>([])
-  const [blobsLoading, setBlobsLoading] = useState(true)
-  const [blobsError, setBlobsError] = useState<string | null>(null)
+  const [blobs, setBlobs] = useState<GalleryBlob[]>([]);
+  const [blobsLoading, setBlobsLoading] = useState(true);
+  const [blobsError, setBlobsError] = useState<string | null>(null);
 
-  const [flaggedBlobs, setFlaggedBlobs] = useState<FlaggedBlob[]>([])
-  const [flaggedLoading, setFlaggedLoading] = useState(false)
-  const [flaggedError, setFlaggedError] = useState<string | null>(null)
+  const [flaggedBlobs, setFlaggedBlobs] = useState<FlaggedBlob[]>([]);
+  const [flaggedLoading, setFlaggedLoading] = useState(false);
+  const [flaggedError, setFlaggedError] = useState<string | null>(null);
 
   // Confirmation modal state
   const [confirm, setConfirm] = useState<{
-    title: string
-    message: string
-    confirmLabel: string
-    variant: 'danger' | 'warning'
-    action: () => Promise<void> | void
-  } | null>(null)
+    title: string;
+    message: string;
+    confirmLabel: string;
+    variant: 'danger' | 'warning';
+    action: () => Promise<void> | void;
+  } | null>(null);
 
-  const [actionError, setActionError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // ── Data fetching ─────────────────────────────────────────────────────
 
   const loadUsers = useCallback(async () => {
-    setUsersLoading(true)
-    setUsersError(null)
+    setUsersLoading(true);
+    setUsersError(null);
     try {
-      const data = await getUsers()
-      setUsers(data)
+      const data = await getUsers();
+      setUsers(data);
     } catch (err) {
-      setUsersError(err instanceof Error ? err.message : 'Failed to load users')
+      setUsersError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
-      setUsersLoading(false)
+      setUsersLoading(false);
     }
-  }, [])
+  }, []);
 
   const loadStorage = useCallback(async () => {
-    setStorageLoading(true)
-    setStorageError(null)
+    setStorageLoading(true);
+    setStorageError(null);
     try {
-      const data = await getStorageStats()
-      setStorageStats(data)
+      const data = await getStorageStats();
+      setStorageStats(data);
     } catch (err) {
-      console.error('loadStorage failed:', err)
-      setStorageError('Failed to load storage stats')
+      console.error('loadStorage failed:', err);
+      setStorageError('Failed to load storage stats');
     } finally {
-      setStorageLoading(false)
+      setStorageLoading(false);
     }
-  }, [])
+  }, []);
 
   const loadBlobs = useCallback(async () => {
-    setBlobsLoading(true)
-    setBlobsError(null)
+    setBlobsLoading(true);
+    setBlobsError(null);
     try {
-      const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } })
-      setBlobs(data)
+      const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } });
+      setBlobs(data);
     } catch (err) {
-      console.error('loadBlobs failed:', err)
-      setBlobsError('Failed to load blobs')
+      console.error('loadBlobs failed:', err);
+      setBlobsError('Failed to load blobs');
     } finally {
-      setBlobsLoading(false)
+      setBlobsLoading(false);
     }
-  }, [])
+  }, []);
 
   const loadFlagged = useCallback(async () => {
-    setFlaggedLoading(true)
-    setFlaggedError(null)
+    setFlaggedLoading(true);
+    setFlaggedError(null);
     try {
-      const data = await getFlaggedBlobs()
-      setFlaggedBlobs(data)
+      const data = await getFlaggedBlobs();
+      setFlaggedBlobs(data);
     } catch (err) {
-      console.error('loadFlagged failed:', err)
-      setFlaggedError('Failed to load flagged blobs')
+      console.error('loadFlagged failed:', err);
+      setFlaggedError('Failed to load flagged blobs');
     } finally {
-      setFlaggedLoading(false)
+      setFlaggedLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    loadUsers()
-    loadStorage()
-    loadBlobs()
-    loadFlagged() // Preload count for the badge
-  }, [loadUsers, loadStorage, loadBlobs, loadFlagged])
+    void loadUsers();
+    void loadStorage();
+    void loadBlobs();
+    void loadFlagged(); // Preload count for the badge
+  }, [loadUsers, loadStorage, loadBlobs, loadFlagged]);
 
   // ── Actions ────────────────────────────────────────────────────────────
 
@@ -644,14 +573,14 @@ function AdminDashboard() {
       variant: 'warning',
       action: async () => {
         if (current) {
-          await unapproveUser({ data: { clerkUserId } })
+          await unapproveUser({ data: { clerkUserId } });
         } else {
-          await approveUser({ data: { clerkUserId } })
+          await approveUser({ data: { clerkUserId } });
         }
-        await loadUsers()
+        await loadUsers();
       },
-    })
-  }
+    });
+  };
 
   const handleToggleBanned = (clerkUserId: string, current: boolean) => {
     setConfirm({
@@ -663,70 +592,70 @@ function AdminDashboard() {
       variant: 'danger',
       action: async () => {
         if (current) {
-          await unbanUser({ data: { clerkUserId } })
+          await unbanUser({ data: { clerkUserId } });
         } else {
-          await banUser({ data: { clerkUserId } })
+          await banUser({ data: { clerkUserId } });
         }
-        await loadUsers()
+        await loadUsers();
       },
-    })
-  }
+    });
+  };
 
   const handleDeleteBlob = (blobId: number) => {
-    const blob = blobs.find((b) => b.id === blobId)
+    const blob = blobs.find((b) => b.id === blobId);
     setConfirm({
       title: 'Delete Blob',
       message: `Are you sure you want to delete "${blob?.title ?? 'this blob'}"? This will remove the blob record and all image variants from storage. This action cannot be undone.`,
       confirmLabel: 'Delete',
       variant: 'danger',
       action: async () => {
-        await deleteBlob({ data: { blobId } })
-        await loadBlobs()
-        await loadStorage()
+        await deleteBlob({ data: { blobId } });
+        await loadBlobs();
+        await loadStorage();
       },
-    })
-  }
+    });
+  };
 
   const handleApproveFlagged = (blobId: number) => {
-    const blob = flaggedBlobs.find((b) => b.id === blobId)
+    const blob = flaggedBlobs.find((b) => b.id === blobId);
     setConfirm({
       title: 'Approve Blob',
       message: `Approve "${blob?.title ?? 'this blob'}"? It will become publicly visible in the gallery.`,
       confirmLabel: 'Approve',
       variant: 'warning',
       action: async () => {
-        await approveFlaggedBlob({ data: { blobId } })
-        await loadFlagged()
+        await approveFlaggedBlob({ data: { blobId } });
+        await loadFlagged();
       },
-    })
-  }
+    });
+  };
 
   const handleRejectFlagged = (blobId: number) => {
-    const blob = flaggedBlobs.find((b) => b.id === blobId)
+    const blob = flaggedBlobs.find((b) => b.id === blobId);
     setConfirm({
       title: 'Reject Blob',
       message: `Reject and permanently delete "${blob?.title ?? 'this blob'}"? This will remove the blob record and all image variants from storage. This action cannot be undone.`,
       confirmLabel: 'Reject & Delete',
       variant: 'danger',
       action: async () => {
-        await rejectFlaggedBlob({ data: { blobId } })
-        await loadFlagged()
-        await loadStorage()
+        await rejectFlaggedBlob({ data: { blobId } });
+        await loadFlagged();
+        await loadStorage();
       },
-    })
-  }
+    });
+  };
 
   const executeConfirm = async () => {
-    if (!confirm) return
-    setActionError(null)
+    if (!confirm) return;
+    setActionError(null);
     try {
-      await confirm.action()
+      await confirm.action();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Action failed')
+      setActionError(err instanceof Error ? err.message : 'Action failed');
     } finally {
-      setConfirm(null)
+      setConfirm(null);
     }
-  }
+  };
 
   // ── Render ─────────────────────────────────────────────────────────────
 
@@ -739,16 +668,14 @@ function AdminDashboard() {
             <Shield className="w-7 h-7 text-doom-400" />
             Admin Dashboard
           </h1>
-          <p className="mt-2 text-noir-400">
-            Manage users, moderate content, and monitor storage.
-          </p>
+          <p className="mt-2 text-noir-400">Manage users, moderate content, and monitor storage.</p>
         </div>
         <button
           onClick={() => {
-            loadUsers()
-            loadStorage()
-            loadBlobs()
-            if (activeTab === 'flagged') loadFlagged()
+            void loadUsers();
+            void loadStorage();
+            void loadBlobs();
+            if (activeTab === 'flagged') void loadFlagged();
           }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
         >
@@ -767,18 +694,18 @@ function AdminDashboard() {
 
       {/* ── Tab Navigation ─────────────────────────────────────────────── */}
       <div className="flex gap-1 mb-8 bg-noir-900 border border-noir-700 rounded-lg p-1 w-fit">
-        {([
-          ['users', 'Users', Users],
-          ['blobs', 'Blobs', Image],
-          ['flagged', 'Flagged', Flag],
-        ] as const).map(([tab, label, Icon]) => (
+        {(
+          [
+            ['users', 'Users', Users],
+            ['blobs', 'Blobs', Image],
+            ['flagged', 'Flagged', Flag],
+          ] as const
+        ).map(([tab, label, Icon]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-              activeTab === tab
-                ? 'bg-doom-500/20 text-doom-300'
-                : 'text-noir-400 hover:text-noir-200'
+              activeTab === tab ? 'bg-doom-500/20 text-doom-300' : 'text-noir-400 hover:text-noir-200'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -803,7 +730,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{storageError}</p>
               <button
-                onClick={loadStorage}
+                onClick={() => void loadStorage()}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -821,11 +748,7 @@ function AdminDashboard() {
           <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-noir-400" />
             Users
-            {!usersLoading && (
-              <span className="text-sm font-normal text-noir-500 ml-1">
-                ({users.length} total)
-              </span>
-            )}
+            {!usersLoading && <span className="text-sm font-normal text-noir-500 ml-1">({users.length} total)</span>}
           </h2>
 
           {usersError ? (
@@ -851,12 +774,8 @@ function AdminDashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-noir-700 text-left">
-                      <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                        Status
-                      </th>
+                      <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">User</th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">Status</th>
                       <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-center">
                         Uploads Today
                       </th>
@@ -888,18 +807,14 @@ function AdminDashboard() {
           <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
             <Image className="w-5 h-5 text-noir-400" />
             Blobs
-            {!blobsLoading && (
-              <span className="text-sm font-normal text-noir-500 ml-1">
-                ({blobs.length} total)
-              </span>
-            )}
+            {!blobsLoading && <span className="text-sm font-normal text-noir-500 ml-1">({blobs.length} total)</span>}
           </h2>
 
           {blobsError ? (
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{blobsError}</p>
               <button
-                onClick={loadBlobs}
+                onClick={() => void loadBlobs()}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -924,12 +839,8 @@ function AdminDashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-noir-700 text-left">
-                      <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                        Blob
-                      </th>
-                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                        Filament
-                      </th>
+                      <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">Blob</th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">Filament</th>
                       <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-center">
                         Doom Scale
                       </th>
@@ -940,11 +851,7 @@ function AdminDashboard() {
                   </thead>
                   <tbody>
                     {blobs.map((blob) => (
-                      <BlobRow
-                        key={blob.id}
-                        blob={blob}
-                        onDelete={handleDeleteBlob}
-                      />
+                      <BlobRow key={blob.id} blob={blob} onDelete={handleDeleteBlob} />
                     ))}
                   </tbody>
                 </table>
@@ -961,9 +868,7 @@ function AdminDashboard() {
             <Flag className="w-5 h-5 text-doom-400" />
             Flagged for Review
             {!flaggedLoading && (
-              <span className="text-sm font-normal text-noir-500 ml-1">
-                ({flaggedBlobs.length} pending)
-              </span>
+              <span className="text-sm font-normal text-noir-500 ml-1">({flaggedBlobs.length} pending)</span>
             )}
           </h2>
 
@@ -971,7 +876,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{flaggedError}</p>
               <button
-                onClick={loadFlagged}
+                onClick={() => void loadFlagged()}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -1013,9 +918,9 @@ function AdminDashboard() {
         message={confirm?.message ?? ''}
         confirmLabel={confirm?.confirmLabel ?? ''}
         confirmVariant={confirm?.variant ?? 'danger'}
-        onConfirm={executeConfirm}
+        onConfirm={() => void executeConfirm()}
         onCancel={() => setConfirm(null)}
       />
     </div>
-  )
+  );
 }

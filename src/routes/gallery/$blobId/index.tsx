@@ -1,82 +1,83 @@
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
-import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Eye, Pencil, Trash2, AlertTriangle } from 'lucide-react'
-import { useAuth } from '@clerk/tanstack-react-start'
-import { fetchBlobDetail, type BlobDetail } from '../../../db/blob-detail.func'
-import { submitRating } from '../../../db/rating.func'
-import { updateBlob, softDeleteBlob } from '../../../db/blob-edit.func'
-import { HexagonRating } from '../../../components/HexagonRating'
+import { useAuth } from '@clerk/tanstack-react-start';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { AlertTriangle, ArrowLeft, Eye, Pencil, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { HexagonRating } from '../../../components/HexagonRating';
+import { type BlobDetail, fetchBlobDetail } from '../../../db/blob-detail.func';
+import { softDeleteBlob, updateBlob } from '../../../db/blob-edit.func';
+import { submitRating } from '../../../db/rating.func';
 
 export const Route = createFileRoute('/gallery/$blobId/')({
   component: BlobDetailPage,
-})
+});
 
 function BlobDetailPage() {
-  const { blobId } = Route.useParams()
-  const { isSignedIn, userId } = useAuth()
-  const router = useRouter()
+  const { blobId } = Route.useParams();
+  const { isSignedIn, userId } = useAuth();
+  const router = useRouter();
 
-  const [blob, setBlob] = useState<BlobDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [blob, setBlob] = useState<BlobDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Edit mode
-  const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDescription, setEditDescription] = useState('')
-  const [editDateOccurred, setEditDateOccurred] = useState('')
-  const [editFilamentType, setEditFilamentType] = useState('')
-  const [editMachineUsed, setEditMachineUsed] = useState('')
-  const [editErrors, setEditErrors] = useState<{ field: string; message: string }[]>([])
-  const [editSubmitting, setEditSubmitting] = useState(false)
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDateOccurred, setEditDateOccurred] = useState('');
+  const [editFilamentType, setEditFilamentType] = useState('');
+  const [editMachineUsed, setEditMachineUsed] = useState('');
+  const [editErrors, setEditErrors] = useState<{ field: string; message: string }[]>([]);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // Delete confirmation
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const isOwner = !!(userId && blob && blob.uploaderProfileId === userId)
+  const isOwner = !!(userId && blob && blob.uploaderProfileId === userId);
 
   useEffect(() => {
-    const id = parseInt(blobId, 10)
+    const id = parseInt(blobId, 10);
     if (isNaN(id)) {
-      setError('Invalid blob ID')
-      setLoading(false)
-      return
+      setError('Invalid blob ID');
+      setLoading(false);
+      return;
     }
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     fetchBlobDetail({ data: id })
       .then(setBlob)
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load blob'))
-      .finally(() => setLoading(false))
-  }, [blobId])
+      .finally(() => setLoading(false));
+  }, [blobId]);
 
   const handleRate = useCallback(
     async (score: number) => {
-      if (!blob) return
-      const id = blob.id
+      if (!blob) return;
+      const id = blob.id;
 
       setBlob((prev) => {
-        if (!prev) return prev
-        const oldUserRating = prev.userRating
-        const oldAverage = prev.averageRating
-        const oldCount = prev.ratingCount
+        if (!prev) return prev;
+        const oldUserRating = prev.userRating;
+        const oldAverage = prev.averageRating;
+        const oldCount = prev.ratingCount;
 
-        let newCount: number
-        let newAverage: number
+        let newCount: number;
+        let newAverage: number;
         if (oldUserRating === null) {
-          newCount = oldCount + 1
-          newAverage = (oldAverage * oldCount + score) / newCount
+          newCount = oldCount + 1;
+          newAverage = (oldAverage * oldCount + score) / newCount;
         } else {
-          newCount = oldCount
-          newAverage = (oldAverage * oldCount - oldUserRating + score) / newCount
+          newCount = oldCount;
+          newAverage = (oldAverage * oldCount - oldUserRating + score) / newCount;
         }
 
-        return { ...prev, userRating: score, averageRating: newAverage, ratingCount: newCount }
-      })
+        return { ...prev, userRating: score, averageRating: newAverage, ratingCount: newCount };
+      });
 
       try {
-        const result = await submitRating({ data: { blobId: id, score } })
+        const result = await submitRating({ data: { blobId: id, score } });
         setBlob((prev) =>
           prev
             ? {
@@ -86,37 +87,37 @@ function BlobDetailPage() {
                 ratingCount: result.ratingCount,
               }
             : prev,
-        )
+        );
       } catch {
-        const fresh = await fetchBlobDetail({ data: id })
-        setBlob(fresh)
+        const fresh = await fetchBlobDetail({ data: id });
+        setBlob(fresh);
       }
     },
     [blob],
-  )
+  );
 
   // ── Edit handlers ──────────────────────────────────────────────────────
 
   const startEditing = () => {
-    if (!blob) return
-    setEditTitle(blob.title)
-    setEditDescription(blob.description ?? '')
-    setEditDateOccurred(blob.dateOccurred)
-    setEditFilamentType(blob.filamentType)
-    setEditMachineUsed(blob.machineUsed)
-    setEditErrors([])
-    setEditing(true)
-  }
+    if (!blob) return;
+    setEditTitle(blob.title);
+    setEditDescription(blob.description ?? '');
+    setEditDateOccurred(blob.dateOccurred);
+    setEditFilamentType(blob.filamentType);
+    setEditMachineUsed(blob.machineUsed);
+    setEditErrors([]);
+    setEditing(true);
+  };
 
   const cancelEditing = () => {
-    setEditing(false)
-    setEditErrors([])
-  }
+    setEditing(false);
+    setEditErrors([]);
+  };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setEditErrors([])
-    setEditSubmitting(true)
+    e.preventDefault();
+    setEditErrors([]);
+    setEditSubmitting(true);
 
     try {
       await updateBlob({
@@ -128,41 +129,41 @@ function BlobDetailPage() {
           filamentType: editFilamentType,
           machineUsed: editMachineUsed,
         },
-      })
+      });
 
       // Refresh the blob data
-      const fresh = await fetchBlobDetail({ data: blob!.id })
-      setBlob(fresh)
-      setEditing(false)
+      const fresh = await fetchBlobDetail({ data: blob!.id });
+      setBlob(fresh);
+      setEditing(false);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Update failed'
+      const message = err instanceof Error ? err.message : 'Update failed';
       try {
-        const parsed = JSON.parse(message)
+        const parsed = JSON.parse(message);
         if (Array.isArray(parsed)) {
-          setEditErrors(parsed)
+          setEditErrors(parsed);
         } else {
-          setEditErrors([{ field: 'general', message }])
+          setEditErrors([{ field: 'general', message }]);
         }
       } catch {
-        setEditErrors([{ field: 'general', message }])
+        setEditErrors([{ field: 'general', message }]);
       }
     } finally {
-      setEditSubmitting(false)
+      setEditSubmitting(false);
     }
-  }
+  };
 
   // ── Delete handler ─────────────────────────────────────────────────────
 
   const handleDelete = async () => {
-    setDeleting(true)
+    setDeleting(true);
     try {
-      await softDeleteBlob({ data: { blobId: blob!.id } })
-      router.navigate({ to: '/gallery' })
+      await softDeleteBlob({ data: { blobId: blob?.id ?? 0 } });
+      void router.navigate({ to: '/gallery' });
     } catch {
-      setDeleting(false)
-      setShowDeleteConfirm(false)
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
-  }
+  };
 
   // ── Loading state ──────────────────────────────────────────────────────
 
@@ -171,7 +172,7 @@ function BlobDetailPage() {
       <div className="max-w-5xl mx-auto px-4 py-12">
         <DetailSkeleton />
       </div>
-    )
+    );
   }
 
   // ── Error state ────────────────────────────────────────────────────────
@@ -188,22 +189,22 @@ function BlobDetailPage() {
           Back to Gallery
         </Link>
       </div>
-    )
+    );
   }
 
   const formattedDate = new Date(blob.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
+  });
 
   const occurredDate = new Date(blob.dateOccurred).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
+  });
 
-  const editFieldError = (field: string) => editErrors.find((e) => e.field === field)?.message
+  const editFieldError = (field: string) => editErrors.find((e) => e.field === field)?.message;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -220,17 +221,13 @@ function BlobDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Left: Image */}
         <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden aspect-[4/3]">
-          <img
-            src={blob.imageFullUrl}
-            alt={blob.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={blob.imageFullUrl} alt={blob.title} className="w-full h-full object-cover" />
         </div>
 
         {/* Right: Details or Edit Form */}
         {editing ? (
           /* ── Edit Form ──────────────────────────────────────────────── */
-          <form onSubmit={handleEditSubmit} className="flex flex-col gap-5" noValidate>
+          <form onSubmit={(e) => void handleEditSubmit(e)} className="flex flex-col gap-5" noValidate>
             <h2 className="text-xl font-bold text-noir-100">Edit Blob</h2>
 
             {editFieldError('general') && (
@@ -255,9 +252,7 @@ function BlobDetailPage() {
                   editFieldError('title') ? 'border-doom-500' : 'border-noir-700'
                 }`}
               />
-              {editFieldError('title') && (
-                <p className="mt-1.5 text-sm text-doom-400">{editFieldError('title')}</p>
-              )}
+              {editFieldError('title') && <p className="mt-1.5 text-sm text-doom-400">{editFieldError('title')}</p>}
             </div>
 
             {/* Description */}
@@ -376,9 +371,7 @@ function BlobDetailPage() {
           <div className="flex flex-col gap-6">
             {/* Title + owner actions */}
             <div>
-              <h1 className="text-3xl font-bold text-noir-100 leading-tight">
-                {blob.title}
-              </h1>
+              <h1 className="text-3xl font-bold text-noir-100 leading-tight">{blob.title}</h1>
               {isOwner && (
                 <div className="flex items-center gap-3 mt-3">
                   <button
@@ -395,9 +388,7 @@ function BlobDetailPage() {
             {/* Description */}
             {blob.description && (
               <div>
-                <h2 className="text-sm font-medium text-noir-400 uppercase tracking-wider mb-2">
-                  Description
-                </h2>
+                <h2 className="text-sm font-medium text-noir-400 uppercase tracking-wider mb-2">Description</h2>
                 <p className="text-noir-200 leading-relaxed">{blob.description}</p>
               </div>
             )}
@@ -415,7 +406,7 @@ function BlobDetailPage() {
                 size={24}
                 interactive={isSignedIn ?? false}
                 userRating={blob.userRating}
-                onRate={isSignedIn ? handleRate : undefined}
+                onRate={isSignedIn ? (...args: [number]) => void handleRate(...args) : undefined}
                 isAuthenticated={isSignedIn ?? false}
               />
             </div>
@@ -423,27 +414,19 @@ function BlobDetailPage() {
             {/* Metadata grid */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-                <span className="text-xs text-noir-500 uppercase tracking-wider">
-                  Filament Type
-                </span>
+                <span className="text-xs text-noir-500 uppercase tracking-wider">Filament Type</span>
                 <p className="mt-1 text-noir-200 font-medium">{blob.filamentType}</p>
               </div>
               <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-                <span className="text-xs text-noir-500 uppercase tracking-wider">
-                  Machine Used
-                </span>
+                <span className="text-xs text-noir-500 uppercase tracking-wider">Machine Used</span>
                 <p className="mt-1 text-noir-200 font-medium">{blob.machineUsed}</p>
               </div>
               <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-                <span className="text-xs text-noir-500 uppercase tracking-wider">
-                  Date Occurred
-                </span>
+                <span className="text-xs text-noir-500 uppercase tracking-wider">Date Occurred</span>
                 <p className="mt-1 text-noir-200 font-medium">{occurredDate}</p>
               </div>
               <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-                <span className="text-xs text-noir-500 uppercase tracking-wider">
-                  Uploaded
-                </span>
+                <span className="text-xs text-noir-500 uppercase tracking-wider">Uploaded</span>
                 <p className="mt-1 text-noir-200 font-medium">{formattedDate}</p>
               </div>
             </div>
@@ -463,10 +446,7 @@ function BlobDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/70"
-            onClick={() => !deleting && setShowDeleteConfirm(false)}
-          />
+          <div className="absolute inset-0 bg-black/70" onClick={() => !deleting && setShowDeleteConfirm(false)} />
           {/* Dialog */}
           <div className="relative bg-noir-900 border border-noir-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
             <div className="flex items-start gap-4">
@@ -476,8 +456,8 @@ function BlobDetailPage() {
               <div>
                 <h3 className="text-lg font-bold text-noir-100">Delete this blob?</h3>
                 <p className="mt-2 text-sm text-noir-400 leading-relaxed">
-                  This will permanently remove &ldquo;{blob.title}&rdquo; from the gallery.
-                  This action cannot be undone.
+                  This will permanently remove &ldquo;{blob.title}&rdquo; from the gallery. This action cannot be
+                  undone.
                 </p>
               </div>
             </div>
@@ -490,15 +470,24 @@ function BlobDetailPage() {
                 Cancel
               </button>
               <button
-                onClick={handleDelete}
+                onClick={() => void handleDelete()}
                 disabled={deleting}
                 className="px-4 py-2 bg-doom-500 text-white text-sm font-bold rounded-lg hover:bg-doom-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
               >
                 {deleting ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg
+                      className="animate-spin w-4 h-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     Deleting…
                   </>
@@ -511,7 +500,7 @@ function BlobDetailPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function DetailSkeleton() {
@@ -533,5 +522,5 @@ function DetailSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }

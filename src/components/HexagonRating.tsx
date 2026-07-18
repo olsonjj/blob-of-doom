@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router';
+import { useId, useState } from 'react';
 
 /**
  * Renders the Doom Scale as 1–5 hexagons.
@@ -16,56 +16,56 @@ export function HexagonRating({
   onRate,
   isAuthenticated = false,
 }: {
-  rating: number
-  size?: number
+  rating: number;
+  size?: number;
   /** Enable click-to-rate interaction */
-  interactive?: boolean
+  interactive?: boolean;
   /** The current user's own rating (1-5), if any */
-  userRating?: number | null
+  userRating?: number | null;
   /** Called when the user clicks a hexagon to submit their rating */
-  onRate?: (score: number) => void
+  onRate?: (score: number) => void;
   /** Whether the current user is authenticated */
-  isAuthenticated?: boolean
+  isAuthenticated?: boolean;
 }) {
-  const [hoveredScore, setHoveredScore] = useState<number | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [hoveredScore, setHoveredScore] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Clamp between 0 and 5
-  const clamped = Math.max(0, Math.min(5, rating))
-  const fullHexes = Math.floor(clamped)
-  const partial = clamped - fullHexes
-  const emptyHexes = 5 - fullHexes - (partial > 0 ? 1 : 0)
+  const clamped = Math.max(0, Math.min(5, rating));
+  const fullHexes = Math.floor(clamped);
+  const partial = clamped - fullHexes;
+  const emptyHexes = 5 - fullHexes - (partial > 0 ? 1 : 0);
 
   const handleClick = async (score: number) => {
-    if (!interactive || !onRate || submitting) return
-    setSubmitting(true)
+    if (!interactive || !onRate || isSubmitting) return;
+    setIsSubmitting(true);
     try {
-      await onRate(score)
+      await onRate(score);
     } finally {
-      setSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Determine the "active" score for highlighting:
   // 1. If hovering, show hovered score
   // 2. If user has rated, show their rating
   // 3. Otherwise, no individual highlight (show average)
-  const activeScore = hoveredScore ?? (interactive ? null : null)
-  const highlightScore = hoveredScore ?? (userRating ?? null)
+  const activeScore = hoveredScore ?? (interactive ? null : null);
+  const highlightScore = hoveredScore ?? userRating ?? null;
 
   return (
     <div className="flex items-center gap-0.5 group" title={`Doom Scale: ${rating.toFixed(1)} / 5`}>
       {Array.from({ length: 5 }, (_, i) => {
-        const score = i + 1
-        const isFilled = score <= fullHexes
-        const isPartial = !isFilled && score === fullHexes + 1 && partial > 0
-        const isEmpty = !isFilled && !isPartial
+        const score = i + 1;
+        const isFilled = score <= fullHexes;
+        const isPartial = !isFilled && score === fullHexes + 1 && partial > 0;
+        const isEmpty = !isFilled && !isPartial;
 
         // Highlight logic:
         // - If hovering: highlight up to hoveredScore
         // - If user has rated and not hovering: highlight user's rating
-        const isHighlighted = highlightScore !== null && score <= highlightScore
-        const isUserRating = userRating === score && hoveredScore === null
+        const isHighlighted = highlightScore !== null && score <= highlightScore;
+        const isUserRating = userRating === score && hoveredScore === null;
 
         return (
           <Hexagon
@@ -77,16 +77,14 @@ export function HexagonRating({
             highlighted={isHighlighted}
             isUserRating={isUserRating}
             dimmed={interactive && isAuthenticated && hoveredScore !== null && score > hoveredScore}
-            submitting={submitting}
-            onClick={() => handleClick(score)}
+            submitting={isSubmitting}
+            onClick={() => void handleClick(score)}
             onHover={() => interactive && isAuthenticated && setHoveredScore(score)}
             onLeave={() => setHoveredScore(null)}
           />
-        )
+        );
       })}
-      <span className="ml-1.5 text-xs text-[#c5f000]/60 tabular-nums">
-        {rating.toFixed(1)}
-      </span>
+      <span className="ml-1.5 text-xs text-[#c5f000]/60 tabular-nums">{rating.toFixed(1)}</span>
 
       {/* Sign-in prompt for unauthenticated users */}
       {interactive && !isAuthenticated && (
@@ -98,7 +96,7 @@ export function HexagonRating({
         </span>
       )}
     </div>
-  )
+  );
 }
 
 function Hexagon({
@@ -114,41 +112,41 @@ function Hexagon({
   onHover,
   onLeave,
 }: {
-  filled?: boolean
-  partial?: number
-  size: number
-  interactive?: boolean
-  highlighted?: boolean
-  isUserRating?: boolean
-  dimmed?: boolean
-  submitting?: boolean
-  onClick?: () => void
-  onHover?: () => void
-  onLeave?: () => void
+  filled?: boolean;
+  partial?: number;
+  size: number;
+  interactive?: boolean;
+  highlighted?: boolean;
+  isUserRating?: boolean;
+  dimmed?: boolean;
+  submitting?: boolean;
+  onClick?: () => void;
+  onHover?: () => void;
+  onLeave?: () => void;
 }) {
   // Hexagon path: flat-top orientation, centered in viewBox
-  const h = size
-  const w = h * 0.866 // cos(30°) ≈ 0.866
-  const strokeW = 1.5
+  const h = size;
+  const w = h * 0.866; // cos(30°) ≈ 0.866
+  const strokeW = 1.5;
 
   // Points for a flat-top hexagon centered at (cx, cy)
-  const cx = w / 2 + strokeW
-  const cy = h / 2 + strokeW
-  const r = Math.min(w, h) / 2 - strokeW
+  const cx = w / 2 + strokeW;
+  const cy = h / 2 + strokeW;
+  const r = Math.min(w, h) / 2 - strokeW;
 
   const points = [0, 1, 2, 3, 4, 5]
     .map((i) => {
-      const angle = (Math.PI / 180) * (60 * i - 30)
-      const px = cx + r * Math.cos(angle)
-      const py = cy + r * Math.sin(angle)
-      return `${px},${py}`
+      const angle = (Math.PI / 180) * (60 * i - 30);
+      const px = cx + r * Math.cos(angle);
+      const py = cy + r * Math.sin(angle);
+      return `${px},${py}`;
     })
-    .join(' ')
+    .join(' ');
 
-  const viewBoxW = w + strokeW * 2
-  const viewBoxH = h + strokeW * 2
+  const viewBoxW = w + strokeW * 2;
+  const viewBoxH = h + strokeW * 2;
 
-  const clipId = `hex-clip-${Math.random().toString(36).slice(2, 8)}`
+  const clipId = useId();
 
   // Color logic:
   // - User's own rating: doom-500 (brighter)
@@ -156,27 +154,27 @@ function Hexagon({
   // - Filled (average): #c5f000
   // - Dimmed (beyond hover): noir-700
   // - Empty: noir-600 outline
-  let fillColor: string
-  let strokeColor: string
+  let fillColor: string;
+  let strokeColor: string;
 
   if (isUserRating) {
-    fillColor = 'text-[#d4ff1a]'
-    strokeColor = 'text-[#d4ff1a]'
+    fillColor = 'text-[#d4ff1a]';
+    strokeColor = 'text-[#d4ff1a]';
   } else if (highlighted) {
-    fillColor = 'text-[#c5f000]'
-    strokeColor = 'text-[#c5f000]'
+    fillColor = 'text-[#c5f000]';
+    strokeColor = 'text-[#c5f000]';
   } else if (filled) {
-    fillColor = 'text-[#c5f000]'
-    strokeColor = 'text-[#c5f000]'
+    fillColor = 'text-[#c5f000]';
+    strokeColor = 'text-[#c5f000]';
   } else if (dimmed) {
-    fillColor = 'text-noir-700'
-    strokeColor = 'text-noir-700'
+    fillColor = 'text-noir-700';
+    strokeColor = 'text-noir-700';
   } else {
-    fillColor = 'text-noir-600'
-    strokeColor = 'text-noir-600'
+    fillColor = 'text-noir-600';
+    strokeColor = 'text-noir-600';
   }
 
-  const cursorClass = interactive && !submitting ? 'cursor-pointer' : ''
+  const cursorClass = interactive && !submitting ? 'cursor-pointer' : '';
 
   return (
     <svg
@@ -194,21 +192,9 @@ function Hexagon({
         </clipPath>
       </defs>
       {/* Background hexagon outline */}
-      <polygon
-        points={points}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeW}
-        className={strokeColor}
-      />
+      <polygon points={points} fill="none" stroke="currentColor" strokeWidth={strokeW} className={strokeColor} />
       {/* Filled area */}
-      {(filled || highlighted) && (
-        <polygon
-          points={points}
-          fill="currentColor"
-          className={fillColor}
-        />
-      )}
+      {(filled || highlighted) && <polygon points={points} fill="currentColor" className={fillColor} />}
       {/* Partial fill from left to right */}
       {partial !== undefined && partial > 0 && !highlighted && (
         <rect
@@ -222,5 +208,5 @@ function Hexagon({
         />
       )}
     </svg>
-  )
+  );
 }

@@ -1,24 +1,25 @@
-import { createServerFn } from '@tanstack/react-start'
-import { db } from './index'
-import { blobs, ratings } from './schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { createServerFn } from '@tanstack/react-start';
+import { and, eq, sql } from 'drizzle-orm';
+
+import { db } from './index';
+import { blobs, ratings } from './schema';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface FeaturedBlob {
-  id: number
-  title: string
-  description: string | null
-  dateOccurred: string
-  filamentType: string
-  machineUsed: string
-  imageThumbnailUrl: string
-  imageMediumUrl: string
-  imageFullUrl: string
-  uploaderProfileId: string
-  createdAt: Date
-  averageRating: number
-  ratingCount: number
+  id: number;
+  title: string;
+  description: string | null;
+  dateOccurred: string;
+  filamentType: string;
+  machineUsed: string;
+  imageThumbnailUrl: string;
+  imageMediumUrl: string;
+  imageFullUrl: string;
+  uploaderProfileId: string;
+  createdAt: Date;
+  averageRating: number;
+  ratingCount: number;
 }
 
 // ── Query (extracted for testability) ───────────────────────────────────────
@@ -49,13 +50,13 @@ export async function queryFeatured(): Promise<FeaturedBlob[]> {
     .where(and(eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .groupBy(blobs.id)
     .orderBy(sql`RANDOM()`)
-    .limit(6)
+    .limit(6);
 
-  return rows as unknown as FeaturedBlob[]
+  return rows as unknown as FeaturedBlob[];
 }
 
 // ── Server function ─────────────────────────────────────────────────────────
 
 export const fetchFeatured = createServerFn({ method: 'GET' }).handler(async () => {
-  return queryFeatured()
-})
+  return queryFeatured();
+});

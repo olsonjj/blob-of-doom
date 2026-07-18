@@ -6,6 +6,7 @@
 ## Problem
 
 Multiple critical paths have empty `.catch(() => {})` blocks:
+
 - `EnsureProfile.tsx` — profile creation failures are invisible; user later hits "Profile not found"
 - `blob-detail.func.ts` — view counts silently lost
 - `admin/index.tsx` — `loadStorage`, `loadBlobs`, `loadFlagged` all fail silently; admin sees empty state and assumes no data

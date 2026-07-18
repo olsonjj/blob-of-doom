@@ -6,18 +6,19 @@
  * Requires DATABASE_URL in environment.
  * Uses picsum.photos for placeholder images (Vercel Blob integration comes in Phase 04).
  */
-import { neon } from '@neondatabase/serverless'
-import { drizzle } from 'drizzle-orm/neon-http'
-import { blobs, profiles } from './schema'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+import { blobs, profiles } from './schema';
 
 // Load .env file for DATABASE_URL
-const __dirname = dirname(fileURLToPath(import.meta.url))
-process.loadEnvFile?.(resolve(__dirname, '../../.env'))
+const __dirname = dirname(fileURLToPath(import.meta.url));
+process.loadEnvFile?.(resolve(__dirname, '../../.env'));
 
-const sql = neon(process.env.DATABASE_URL!)
-const db = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+const db = drizzle(sql);
 
 const DEMO_BLOBS = [
   {
@@ -92,22 +93,22 @@ const DEMO_BLOBS = [
     machineUsed: 'Neptune 4 Pro',
     imageSlug: 'first-layer-art',
   },
-]
+];
 
 // Use a known test profile ID — this should match a Clerk user that exists
 // or be created manually. For seed data, we use a placeholder.
-const SEED_PROFILE_ID = 'seed-demo-user'
+const SEED_PROFILE_ID = 'seed-demo-user';
 
 function imageUrls(slug: string) {
   return {
     imageThumbnailUrl: `https://picsum.photos/seed/${slug}/150/150`,
     imageMediumUrl: `https://picsum.photos/seed/${slug}/600/450`,
     imageFullUrl: `https://picsum.photos/seed/${slug}/1200/900`,
-  }
+  };
 }
 
 async function seed() {
-  console.log('🌱 Seeding gallery with demo blobs...')
+  console.log('🌱 Seeding gallery with demo blobs...');
 
   // Create a seed profile if it doesn't exist (needed for FK constraint)
   await db
@@ -118,11 +119,11 @@ async function seed() {
       approved: 0,
       banned: 0,
     })
-    .onConflictDoNothing()
-  console.log(`  ✓ Seed profile (${SEED_PROFILE_ID})`)
+    .onConflictDoNothing();
+  console.log(`  ✓ Seed profile (${SEED_PROFILE_ID})`);
 
   for (const blob of DEMO_BLOBS) {
-    const urls = imageUrls(blob.imageSlug)
+    const urls = imageUrls(blob.imageSlug);
     await db.insert(blobs).values({
       title: blob.title,
       description: blob.description,
@@ -131,15 +132,15 @@ async function seed() {
       machineUsed: blob.machineUsed,
       uploaderProfileId: SEED_PROFILE_ID,
       ...urls,
-    })
-    console.log(`  ✓ ${blob.title}`)
+    });
+    console.log(`  ✓ ${blob.title}`);
   }
 
-  console.log(`\n✅ Seeded ${DEMO_BLOBS.length} demo blobs.`)
-  process.exit(0)
+  console.log(`\n✅ Seeded ${DEMO_BLOBS.length} demo blobs.`);
+  process.exit(0);
 }
 
 seed().catch((err) => {
-  console.error('❌ Seed failed:', err)
-  process.exit(1)
-})
+  console.error('❌ Seed failed:', err);
+  process.exit(1);
+});

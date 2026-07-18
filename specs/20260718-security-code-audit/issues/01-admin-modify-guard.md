@@ -17,10 +17,10 @@ const [target] = await db
   .select({ isAdmin: profiles.isAdmin })
   .from(profiles)
   .where(eq(profiles.clerkUserId, clerkUserId))
-  .limit(1)
+  .limit(1);
 
-if (!target) throw new Error('User not found')
-if (target.isAdmin === 1) throw new Error('Cannot modify admin users')
+if (!target) throw new Error('User not found');
+if (target.isAdmin === 1) throw new Error('Cannot modify admin users');
 ```
 
 ## Acceptance criteria

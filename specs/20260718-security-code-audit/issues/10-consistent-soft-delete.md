@@ -13,10 +13,10 @@ Change `removeBlob` to soft-delete (`deleted: 1`) for consistency. The Blob file
 
 ```ts
 // Replace:
-await db.delete(blobs).where(eq(blobs.id, blobId))
+await db.delete(blobs).where(eq(blobs.id, blobId));
 
 // With:
-await db.update(blobs).set({ deleted: 1 }).where(eq(blobs.id, blobId))
+await db.update(blobs).set({ deleted: 1 }).where(eq(blobs.id, blobId));
 ```
 
 ## Acceptance criteria

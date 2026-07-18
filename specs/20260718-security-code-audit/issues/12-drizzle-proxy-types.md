@@ -8,7 +8,7 @@
 The lazy-initialization Proxy casts through `unknown`, discarding Drizzle ORM types:
 
 ```ts
-return (getDb() as unknown as Record<string | symbol, unknown>)[prop]
+return (getDb() as unknown as Record<string | symbol, unknown>)[prop];
 ```
 
 IDE autocomplete and compile-time query checking are unreliable for schema-specific methods.
@@ -19,16 +19,16 @@ Replace with a properly typed Proxy factory:
 
 ```ts
 function createLazyDb(): NeonHttpDatabase<typeof schema> {
-  const target = {} as NeonHttpDatabase<typeof schema>
+  const target = {} as NeonHttpDatabase<typeof schema>;
   return new Proxy(target, {
     get(_, prop) {
-      const db = getDb()
-      return (db as Record<string | symbol, unknown>)[prop]
+      const db = getDb();
+      return (db as Record<string | symbol, unknown>)[prop];
     },
-  })
+  });
 }
 
-export const db = createLazyDb()
+export const db = createLazyDb();
 ```
 
 ## Acceptance criteria

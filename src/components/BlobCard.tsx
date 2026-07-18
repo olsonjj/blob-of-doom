@@ -1,6 +1,7 @@
-import { Link } from '@tanstack/react-router'
-import { HexagonRating } from './HexagonRating'
-import type { GalleryBlob } from '../db/gallery.func'
+import { Link } from '@tanstack/react-router';
+
+import type { GalleryBlob } from '../db/gallery.func';
+import { HexagonRating } from './HexagonRating';
 
 /**
  * Poster-style card for a single blob in the gallery.
@@ -12,7 +13,7 @@ export function BlobCard({ blob }: { blob: GalleryBlob }) {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  })
+  });
 
   return (
     <article className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors group flex flex-col">
@@ -37,11 +38,7 @@ export function BlobCard({ blob }: { blob: GalleryBlob }) {
         </Link>
 
         {/* Description (truncated) */}
-        {blob.description && (
-          <p className="text-sm text-noir-300 line-clamp-2 leading-relaxed">
-            {blob.description}
-          </p>
-        )}
+        {blob.description && <p className="text-sm text-noir-300 line-clamp-2 leading-relaxed">{blob.description}</p>}
 
         {/* Bottom row: rating + date — pushed to bottom */}
         <div className="flex items-center justify-between pt-2 border-t border-noir-800 mt-auto">
@@ -52,5 +49,5 @@ export function BlobCard({ blob }: { blob: GalleryBlob }) {
         </div>
       </div>
     </article>
-  )
+  );
 }

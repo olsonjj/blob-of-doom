@@ -1,12 +1,4 @@
-import {
-  pgTable,
-  text,
-  integer,
-  timestamp,
-  uniqueIndex,
-  date,
-  jsonb,
-} from 'drizzle-orm/pg-core'
+import { date, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // ── Profiles ────────────────────────────────────────────────────────────────
 // App-specific user metadata. Clerk owns the user identity; this table
@@ -20,7 +12,7 @@ export const profiles = pgTable('profiles', {
   banned: integer('banned').notNull().default(0), // 0 = active, 1 = banned
   isAdmin: integer('is_admin').notNull().default(0), // 0 = regular user, 1 = admin
   createdAt: timestamp('created_at').notNull().defaultNow(),
-})
+});
 
 // ── Blobs ───────────────────────────────────────────────────────────────────
 // A "blob of doom" — a 3D-printing failure submitted by a user.
@@ -43,7 +35,7 @@ export const blobs = pgTable('blobs', {
   flagged: integer('flagged').notNull().default(0), // 0 = clean, 1 = flagged for review
   moderationScores: jsonb('moderation_scores'), // SightEngine moderation results
   createdAt: timestamp('created_at').notNull().defaultNow(),
-})
+});
 
 // ── Ratings ─────────────────────────────────────────────────────────────────
 // Doom Scale ratings (1–5 hexagons). One rating per user per blob.
@@ -62,7 +54,5 @@ export const ratings = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex('ratings_blob_rater_idx').on(table.blobId, table.raterProfileId),
-  ],
-)
+  (table) => [uniqueIndex('ratings_blob_rater_idx').on(table.blobId, table.raterProfileId)],
+);

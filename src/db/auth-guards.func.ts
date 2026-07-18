@@ -1,5 +1,5 @@
-import { createServerFn } from '@tanstack/react-start'
-import { redirect } from '@tanstack/react-router'
+import { redirect } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
 
 /**
  * Route guards executed as server functions.
@@ -21,32 +21,32 @@ import { redirect } from '@tanstack/react-router'
  */
 
 export const requireAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const { auth } = await import('@clerk/tanstack-react-start/server')
-  const { userId } = await auth()
+  const { auth } = await import('@clerk/tanstack-react-start/server');
+  const { userId } = await auth();
   if (!userId) {
-    throw redirect({ to: '/sign-in/$' })
+    throw redirect({ to: '/sign-in/$' });
   }
-  return { userId }
-})
+  return { userId };
+});
 
 export const requireAdmin = createServerFn({ method: 'GET' }).handler(async () => {
-  const { auth } = await import('@clerk/tanstack-react-start/server')
-  const { userId } = await auth()
+  const { auth } = await import('@clerk/tanstack-react-start/server');
+  const { userId } = await auth();
   if (!userId) {
-    throw redirect({ to: '/sign-in/$' })
+    throw redirect({ to: '/sign-in/$' });
   }
 
-  const { db } = await import('./index')
-  const { profiles } = await import('./schema')
-  const { eq } = await import('drizzle-orm')
+  const { db } = await import('./index');
+  const { profiles } = await import('./schema');
+  const { eq } = await import('drizzle-orm');
   const [profile] = await db
     .select({ isAdmin: profiles.isAdmin })
     .from(profiles)
     .where(eq(profiles.clerkUserId, userId))
-    .limit(1)
+    .limit(1);
 
   if (profile?.isAdmin !== 1) {
-    throw redirect({ to: '/' })
+    throw redirect({ to: '/' });
   }
-  return { userId }
-})
+  return { userId };
+});

@@ -6,20 +6,20 @@
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | [TanStack Start](https://tanstack.com/start) (React 19, SSR, server functions) |
-| **Router** | [TanStack Router](https://tanstack.com/router) (file-based, type-safe) |
-| **Database** | [Neon](https://neon.tech) (serverless Postgres) |
-| **ORM** | [Drizzle ORM](https://orm.drizzle.team) |
-| **Auth** | [Clerk](https://clerk.com) (`@clerk/tanstack-react-start`) |
-| **Storage** | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
-| **Image processing** | [Sharp](https://sharp.pixelplumbing.com) (WebP variants) |
-| **Content moderation** | [SightEngine](https://sightengine.com) (nudity + WAD detection) |
-| **Styling** | [Tailwind CSS v4](https://tailwindcss.com) |
-| **Icons** | [Lucide React](https://lucide.dev) |
-| **Testing** | [Vitest](https://vitest.dev) |
-| **Deployment** | [Vercel](https://vercel.com) |
+| Layer                  | Technology                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| **Framework**          | [TanStack Start](https://tanstack.com/start) (React 19, SSR, server functions) |
+| **Router**             | [TanStack Router](https://tanstack.com/router) (file-based, type-safe)         |
+| **Database**           | [Neon](https://neon.tech) (serverless Postgres)                                |
+| **ORM**                | [Drizzle ORM](https://orm.drizzle.team)                                        |
+| **Auth**               | [Clerk](https://clerk.com) (`@clerk/tanstack-react-start`)                     |
+| **Storage**            | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob)                     |
+| **Image processing**   | [Sharp](https://sharp.pixelplumbing.com) (WebP variants)                       |
+| **Content moderation** | [SightEngine](https://sightengine.com) (nudity + WAD detection)                |
+| **Styling**            | [Tailwind CSS v4](https://tailwindcss.com)                                     |
+| **Icons**              | [Lucide React](https://lucide.dev)                                             |
+| **Testing**            | [Vitest](https://vitest.dev)                                                   |
+| **Deployment**         | [Vercel](https://vercel.com)                                                   |
 
 ---
 
@@ -50,14 +50,14 @@ Copy the example and fill in your keys:
 cp .env.example .env.local
 ```
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Neon Postgres connection string |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob read/write token |
-| `SIGHTENGINE_API_USER` | SightEngine API user ID |
-| `SIGHTENGINE_API_SECRET` | SightEngine API secret |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
-| `CLERK_SECRET_KEY` | Clerk secret key |
+| Variable                     | Description                     |
+| ---------------------------- | ------------------------------- |
+| `DATABASE_URL`               | Neon Postgres connection string |
+| `BLOB_READ_WRITE_TOKEN`      | Vercel Blob read/write token    |
+| `SIGHTENGINE_API_USER`       | SightEngine API user ID         |
+| `SIGHTENGINE_API_SECRET`     | SightEngine API secret          |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key           |
+| `CLERK_SECRET_KEY`           | Clerk secret key                |
 
 ### 3. Set up the database
 
@@ -117,14 +117,14 @@ src/
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server on port 3000 |
-| `pnpm build` | Production build |
-| `pnpm preview` | Preview production build |
-| `pnpm test` | Run Vitest suite (71 tests) |
-| `node scripts/test-moderation.mjs <image>` | Test SightEngine against a local image |
-| `node scripts/seed-flagged.mjs [seed\|clear\|status]` | Manage test flagged blobs |
+| Command                                               | Description                            |
+| ----------------------------------------------------- | -------------------------------------- |
+| `pnpm dev`                                            | Start dev server on port 3000          |
+| `pnpm build`                                          | Production build                       |
+| `pnpm preview`                                        | Preview production build               |
+| `pnpm test`                                           | Run Vitest suite (71 tests)            |
+| `node scripts/test-moderation.mjs <image>`            | Test SightEngine against a local image |
+| `node scripts/seed-flagged.mjs [seed\|clear\|status]` | Manage test flagged blobs              |
 
 ---
 
@@ -135,11 +135,11 @@ Uploads are analyzed by SightEngine for nudity, weapons, alcohol, and drugs. Fla
 Thresholds (configurable in `src/db/moderation.func.ts`):
 
 | Category | Threshold |
-|----------|-----------|
-| Nudity | 0.6 |
-| Weapons | 0.7 |
-| Alcohol | 0.7 |
-| Drugs | 0.7 |
+| -------- | --------- |
+| Nudity   | 0.6       |
+| Weapons  | 0.7       |
+| Alcohol  | 0.7       |
+| Drugs    | 0.7       |
 
 ---
 

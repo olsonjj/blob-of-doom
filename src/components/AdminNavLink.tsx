@@ -1,28 +1,29 @@
-import { useState, useEffect } from 'react'
-import { Link } from '@tanstack/react-router'
-import { Shield } from 'lucide-react'
-import { useAuth } from '@clerk/tanstack-react-start'
-import { checkAdminStatus } from '../db/admin-check.func'
+import { useAuth } from '@clerk/tanstack-react-start';
+import { Link } from '@tanstack/react-router';
+import { Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { checkAdminStatus } from '../db/admin-check.func';
 
 /**
  * Renders an "Admin" nav link only if the current user is an admin.
  * Checks admin status once when the user is signed in.
  */
 export function AdminNavLink() {
-  const { isSignedIn, isLoaded } = useAuth()
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [checked, setChecked] = useState(false)
+  const { isSignedIn, isLoaded } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && !checked) {
-      setChecked(true)
-      checkAdminStatus()
+    if (isLoaded && isSignedIn && !hasChecked) {
+      setHasChecked(true);
+      void checkAdminStatus()
         .then(setIsAdmin)
-        .catch(() => setIsAdmin(false))
+        .catch(() => setIsAdmin(false));
     }
-  }, [isLoaded, isSignedIn, checked])
+  }, [isLoaded, isSignedIn, hasChecked]);
 
-  if (!isAdmin) return null
+  if (!isAdmin) return null;
 
   return (
     <Link
@@ -32,5 +33,5 @@ export function AdminNavLink() {
       <Shield className="w-4 h-4" />
       Admin
     </Link>
-  )
+  );
 }

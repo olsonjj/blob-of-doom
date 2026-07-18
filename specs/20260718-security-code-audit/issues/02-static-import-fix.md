@@ -8,7 +8,7 @@
 `profile.func.ts` uses a top-level static import of `@clerk/tanstack-react-start/server`:
 
 ```ts
-import { auth } from '@clerk/tanstack-react-start/server'
+import { auth } from '@clerk/tanstack-react-start/server';
 ```
 
 This file is imported by `EnsureProfile.tsx` (a client component), creating a path for server-only Clerk code to leak into the client bundle. Every other DB module uses dynamic `await import(...)`. The codebase's own docs in `auth-guards.func.ts:1-18` explain why static imports of server-only packages are dangerous in TanStack Start.
@@ -22,10 +22,10 @@ Remove the top-level import. Move it inside the handler as a dynamic import, mat
 
 // Inside the handler:
 export const ensureProfile = createServerFn({ method: 'POST' }).handler(async () => {
-  const { auth } = await import('@clerk/tanstack-react-start/server')
-  const { userId } = await auth()
+  const { auth } = await import('@clerk/tanstack-react-start/server');
+  const { userId } = await auth();
   // ... rest unchanged
-})
+});
 ```
 
 ## Acceptance criteria

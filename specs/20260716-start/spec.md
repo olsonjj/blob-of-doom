@@ -102,6 +102,7 @@ Tests should validate external behavior — what the user sees and does — not 
 **Primary seam — TanStack Start server functions.** Every user-facing operation (fetch gallery, upload blob, submit rating, admin actions) flows through a server function. Testing at this layer validates the full request → auth → database → response cycle without a browser. Server functions are invoked programmatically in tests with mocked auth context where needed.
 
 **Secondary seam — E2E page-level tests (Playwright).** Critical user journeys are tested end-to-end:
+
 - Visitor lands on homepage → browses gallery → signs up via Clerk → uploads a blob → sees it in gallery → rates it.
 - Admin views user list → approves a user → bans a user → deletes a blob.
 

@@ -13,14 +13,14 @@ Swap the order: delete from DB first, then from Blob. Log Blob deletion failures
 
 ```ts
 // BEFORE:
-await del([...urls], { token, storeId })
-await db.delete(blobs).where(eq(blobs.id, blobId))
+await del([...urls], { token, storeId });
+await db.delete(blobs).where(eq(blobs.id, blobId));
 
 // AFTER:
-await db.delete(blobs).where(eq(blobs.id, blobId))
+await db.delete(blobs).where(eq(blobs.id, blobId));
 await del([...urls], { token, storeId }).catch((err) => {
-  console.error('Failed to delete Blob files for blobId:', blobId, err)
-})
+  console.error('Failed to delete Blob files for blobId:', blobId, err);
+});
 ```
 
 ## Acceptance criteria

@@ -25,15 +25,16 @@ const [target] = await db
   .select({ isAdmin: profiles.isAdmin })
   .from(profiles)
   .where(eq(profiles.clerkUserId, clerkUserId))
-  .limit(1)
+  .limit(1);
 
-if (!target) throw new Error('User not found')
-if (target.isAdmin === 1) throw new Error('Cannot modify admin users')
+if (!target) throw new Error('User not found');
+if (target.isAdmin === 1) throw new Error('Cannot modify admin users');
 ```
 
 **Also:** Add the same guard to `removeBlob` — an admin should not be able to delete another admin's blob without additional safeguards. For now, add a check that the blob's uploader is not an admin, or skip this if it complicates the flagged-blob rejection flow (admins need to reject flagged blobs from anyone).
 
 **Acceptance criteria:**
+
 - [ ] `banUser` server function throws when target `clerkUserId` belongs to an admin
 - [ ] `unbanUser` server function throws when target `clerkUserId` belongs to an admin
 - [ ] `approveUser` server function throws when target `clerkUserId` belongs to an admin
@@ -52,17 +53,18 @@ if (target.isAdmin === 1) throw new Error('Cannot modify admin users')
 
 ```ts
 // BEFORE (line 2):
-import { auth } from '@clerk/tanstack-react-start/server'
+import { auth } from '@clerk/tanstack-react-start/server';
 
 // AFTER — remove the top-level import, move inside handler:
 export const ensureProfile = createServerFn({ method: 'POST' }).handler(async () => {
-  const { auth } = await import('@clerk/tanstack-react-start/server')
-  const { userId } = await auth()
+  const { auth } = await import('@clerk/tanstack-react-start/server');
+  const { userId } = await auth();
   // ... rest unchanged
-})
+});
 ```
 
 **Acceptance criteria:**
+
 - [ ] No static import of `@clerk/tanstack-react-start/server` in `profile.func.ts`
 - [ ] `ensureProfile` still works correctly (profile created on first call, no-op on subsequent)
 - [ ] `EnsureProfile.tsx` client component does not pull server-only Clerk code into the client bundle (verify via build analysis or manual bundle inspection)
@@ -84,24 +86,18 @@ if (!moderation.flagged) {
 }
 
 // AFTER: always increment
-const [profile] = await db
-  .select()
-  .from(profiles)
-  .where(eq(profiles.clerkUserId, userId))
-  .limit(1)
+const [profile] = await db.select().from(profiles).where(eq(profiles.clerkUserId, userId)).limit(1);
 
-const newCount =
-  profile && profile.lastUploadDate === today
-    ? profile.uploadCountToday + 1
-    : 1
+const newCount = profile && profile.lastUploadDate === today ? profile.uploadCountToday + 1 : 1;
 
 await db
   .update(profiles)
   .set({ uploadCountToday: newCount, lastUploadDate: today })
-  .where(eq(profiles.clerkUserId, userId))
+  .where(eq(profiles.clerkUserId, userId));
 ```
 
 **Acceptance criteria:**
+
 - [ ] Upload count increments for flagged uploads
 - [ ] Upload count increments for clean uploads (no regression)
 - [ ] Admins still bypass the limit (no regression)
@@ -122,7 +118,7 @@ Real issues requiring design discussion or with narrower exploit windows.
 
 **Decision needed:** Choose an approach.
 
-**Option A — Increment-first (recommended):** Move the count increment to *before* image processing, moderation, and Blob upload. If any subsequent step fails, decrement the count. This avoids long-held row locks.
+**Option A — Increment-first (recommended):** Move the count increment to _before_ image processing, moderation, and Blob upload. If any subsequent step fails, decrement the count. This avoids long-held row locks.
 
 ```ts
 // Pseudocode:
@@ -140,6 +136,7 @@ Real issues requiring design discussion or with narrower exploit windows.
 **Recommendation:** Option A. It's the least invasive, avoids lock contention, and the decrement-on-failure path is straightforward.
 
 **Acceptance criteria:**
+
 - [ ] Two concurrent upload requests from the same user cannot both succeed
 - [ ] Failed uploads (processing error, moderation error, Blob error) do not permanently consume the daily slot
 - [ ] Successful uploads count exactly once
@@ -163,6 +160,7 @@ Real issues requiring design discussion or with narrower exploit windows.
 **Recommendation:** Option A for safety, with Option C as a fast-follow so operators can tune behavior.
 
 **Acceptance criteria:**
+
 - [ ] SightEngine API errors result in `flagged: true` (or configurable behavior)
 - [ ] Network/timeout errors result in `flagged: true` (or configurable behavior)
 - [ ] `moderationScores` includes a `moderationUnavailable: true` marker so the UI can distinguish "flagged by AI" from "flagged because moderation was down"
@@ -186,6 +184,7 @@ Real issues requiring design discussion or with narrower exploit windows.
 - **`admin/index.tsx`** — `loadStorage`, `loadBlobs`, `loadFlagged` — add error state to UI (e.g., "Failed to load. [Retry]") in addition to `console.error`
 
 **Acceptance criteria:**
+
 - [ ] All empty `.catch(() => {})` blocks replaced with at least `console.error`
 - [ ] Admin panel shows user-visible error state when data loading fails (not silent empty state)
 - [ ] Admin panel has a retry mechanism for failed data loads
@@ -214,10 +213,11 @@ const [upserted] = await db
     target: [ratings.blobId, ratings.raterProfileId],
     set: { score, updatedAt: new Date() },
   })
-  .returning()
+  .returning();
 ```
 
 **Acceptance criteria:**
+
 - [ ] Single atomic query instead of update + insert
 - [ ] No 500 error on concurrent rating submissions from same user
 - [ ] Existing rating tests pass
@@ -232,24 +232,25 @@ const [upserted] = await db
 **Change:** Track uploaded blob URLs and attempt cleanup on failure. Best-effort — log if cleanup fails.
 
 ```ts
-const uploadedUrls: string[] = []
+const uploadedUrls: string[] = [];
 try {
   // ... upload to Blob, collect URLs
-  uploadedUrls.push(thumbResult.url, mediumResult.url, fullResult.url)
+  uploadedUrls.push(thumbResult.url, mediumResult.url, fullResult.url);
   // ... DB insert
 } catch (err) {
   // Best-effort cleanup
   if (uploadedUrls.length > 0) {
-    const { del } = await import('@vercel/blob')
+    const { del } = await import('@vercel/blob');
     del(uploadedUrls, { token, storeId }).catch((cleanupErr) => {
-      console.error('Failed to clean up orphaned blobs:', cleanupErr)
-    })
+      console.error('Failed to clean up orphaned blobs:', cleanupErr);
+    });
   }
-  throw err
+  throw err;
 }
 ```
 
 **Acceptance criteria:**
+
 - [ ] Failed uploads attempt to delete already-uploaded Blob files
 - [ ] Cleanup failure is logged but does not mask the original error
 - [ ] Successful uploads are unaffected
@@ -265,17 +266,18 @@ try {
 
 ```ts
 // BEFORE:
-await del([...urls], { token, storeId })
-await db.delete(blobs).where(eq(blobs.id, blobId))
+await del([...urls], { token, storeId });
+await db.delete(blobs).where(eq(blobs.id, blobId));
 
 // AFTER:
-await db.delete(blobs).where(eq(blobs.id, blobId))
+await db.delete(blobs).where(eq(blobs.id, blobId));
 await del([...urls], { token, storeId }).catch((err) => {
-  console.error('Failed to delete Blob files for blobId:', blobId, err)
-})
+  console.error('Failed to delete Blob files for blobId:', blobId, err);
+});
 ```
 
 **Acceptance criteria:**
+
 - [ ] DB row deleted before Blob files
 - [ ] Blob deletion failure is logged but does not throw
 - [ ] No DB rows pointing to deleted files (the worse failure mode is eliminated)
@@ -294,6 +296,7 @@ await del([...urls], { token, storeId }).catch((err) => {
 **Change:** Replace `db.delete(blobs)` in `removeBlob` with `db.update(blobs).set({ deleted: 1 })`.
 
 **Acceptance criteria:**
+
 - [ ] `removeBlob` (and `rejectFlaggedBlob` which calls it) uses soft-delete
 - [ ] Soft-deleted blobs are excluded from gallery queries (verify existing `deleted: 0` filters)
 - [ ] Admin can still see soft-deleted blobs in the admin panel (or a separate "deleted" view)
@@ -324,6 +327,7 @@ if ('errors' in result && !result.success) { ... }
 **Note:** This changes the return type of the server functions. All callers must be updated. This is the most invasive cleanup item — consider deferring if the blast radius is too large.
 
 **Acceptance criteria:**
+
 - [ ] Server functions return structured errors, not JSON-in-message
 - [ ] All client call sites updated to handle the new return type
 - [ ] No `JSON.parse` of error messages remains in client code
@@ -341,21 +345,22 @@ if ('errors' in result && !result.success) { ... }
 ```ts
 // A typed Proxy that preserves NeonHttpDatabase<typeof schema>
 function createLazyDb(): NeonHttpDatabase<typeof schema> {
-  const target = {} as NeonHttpDatabase<typeof schema>
+  const target = {} as NeonHttpDatabase<typeof schema>;
   return new Proxy(target, {
     get(_, prop) {
-      const db = getDb()
-      return (db as Record<string | symbol, unknown>)[prop]
+      const db = getDb();
+      return (db as Record<string | symbol, unknown>)[prop];
     },
-  })
+  });
 }
 
-export const db = createLazyDb()
+export const db = createLazyDb();
 ```
 
 **Note:** The outer type annotation `NeonHttpDatabase<typeof schema>` already provides most of the IDE value. This change is primarily for correctness. Verify that Drizzle's query builder types still flow through after the change.
 
 **Acceptance criteria:**
+
 - [ ] No `as unknown as` cast in the Proxy
 - [ ] IDE autocomplete for `db.select()`, `db.insert()`, etc. still works
 - [ ] IDE autocomplete for schema-specific methods (e.g., `db.query.blobs`) still works
@@ -372,11 +377,12 @@ export const db = createLazyDb()
 
 ```ts
 // src/shared/constants.ts
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
 ```
 
 **Acceptance criteria:**
+
 - [ ] `ALLOWED_TYPES` and `MAX_FILE_SIZE` defined in exactly one place
 - [ ] Both `upload.func.ts` and `upload/index.tsx` import from the shared location
 - [ ] No server-only code in the shared constants file
@@ -396,6 +402,7 @@ Important but not urgent. Schedule for dedicated effort.
 **Files:** `src/routes/admin/index.tsx`
 
 **Plan:** Split into:
+
 - `src/routes/admin/components/UserTable.tsx`
 - `src/routes/admin/components/BlobTable.tsx`
 - `src/routes/admin/components/FlaggedQueue.tsx`
@@ -403,6 +410,7 @@ Important but not urgent. Schedule for dedicated effort.
 - `src/routes/admin/components/ConfirmModal.tsx`
 
 **Acceptance criteria:**
+
 - [ ] Each component is under ~200 lines
 - [ ] No behavioral changes — admin panel functions identically
 - [ ] Existing admin tests pass
@@ -415,6 +423,7 @@ Important but not urgent. Schedule for dedicated effort.
 **Files:** `src/db/moderation.func.ts`, `src/db/blob-detail.func.ts`, `src/db/blob-edit.func.ts`, `src/db/auth-guards.func.ts`, `src/db/profile.func.ts`, `src/db/admin-check.func.ts`
 
 **Priority order:**
+
 1. `moderation.func.ts` — fail-open behavior is security-sensitive
 2. `auth-guards.func.ts` — auth bypass would be catastrophic
 3. `profile.func.ts` — after the static import fix (1.2), verify no regression
@@ -423,6 +432,7 @@ Important but not urgent. Schedule for dedicated effort.
 6. `admin-check.func.ts` — admin verification
 
 **Acceptance criteria:**
+
 - [ ] `moderation.func.ts` has tests for: clean image, flagged image, API error, network error, missing credentials
 - [ ] `auth-guards.func.ts` has tests for: authenticated user, unauthenticated user, admin user, non-admin user
 - [ ] `profile.func.ts` has tests for: new user (insert), existing user (no-op), unauthenticated
