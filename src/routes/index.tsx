@@ -2,7 +2,6 @@ import { useAuth } from '@clerk/tanstack-react-start';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
-import heroBg from '../../screen.png';
 import { BlobCard } from '../components/BlobCard';
 import { type FeaturedBlob, fetchFeatured } from '../db/featured.func';
 
@@ -26,7 +25,7 @@ function Home() {
         {/* Background image - blurred and faded */}
         <div
           className="absolute inset-0 scale-105 bg-cover bg-center blur-[1px] opacity-90"
-          style={{ backgroundImage: `url(${heroBg})` }}
+          style={{ backgroundImage: `url(/screen.png)` }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,10,12,0.10),rgba(3,6,7,0.55)_74%),linear-gradient(90deg,rgba(0,0,0,0.45),rgba(0,0,0,0.15)_46%,rgba(0,0,0,0.50))]" />
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/50 to-transparent" />
