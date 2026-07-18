@@ -38,6 +38,7 @@ export const blobs = pgTable('blobs', {
     .notNull()
     .references(() => profiles.clerkUserId),
   viewCount: integer('view_count').notNull().default(0),
+  deleted: integer('deleted').notNull().default(0), // 0 = active, 1 = soft-deleted
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 

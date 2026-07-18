@@ -46,6 +46,7 @@ export async function queryFeatured(): Promise<FeaturedBlob[]> {
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
+    .where(eq(blobs.deleted, 0))
     .groupBy(blobs.id)
     .orderBy(sql`RANDOM()`)
     .limit(6)

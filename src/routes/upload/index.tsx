@@ -349,9 +349,10 @@ function UploadPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe what went wrong&hellip;"
             rows={4}
-            maxLength={2000}
+            maxLength={500}
             className="w-full px-4 py-3 bg-noir-900 border border-noir-700 rounded-lg text-noir-100 placeholder:text-noir-500 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors resize-y"
           />
+          <p className="mt-1 text-xs text-noir-500 text-right">{description.length}/500</p>
         </div>
 
         {/* ── Submit ─────────────────────────────────────────────────────── */}

@@ -18,10 +18,6 @@ function Home() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleBlobDeleted = (blobId: number) => {
-    setFeatured((prev) => prev.filter((b) => b.id !== blobId))
-  }
-
   return (
     <div>
       {/* ── Hero ────────────────────────────────────────────────────────── */}
@@ -103,7 +99,7 @@ function Home() {
           ) : (
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {featured.map((blob) => (
-                <BlobCard key={blob.id} blob={blob} onDelete={() => handleBlobDeleted(blob.id)} />
+                <BlobCard key={blob.id} blob={blob} />
               ))}
             </div>
           )}

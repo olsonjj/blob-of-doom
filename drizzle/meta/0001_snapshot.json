@@ -1,0 +1,309 @@
+{
+  "id": "2523a965-a694-40b8-8ebb-cafb66918d60",
+  "prevId": "bfaafa43-1016-461d-8205-95e6ef1b10d3",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.blobs": {
+      "name": "blobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "blobs_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_occurred": {
+          "name": "date_occurred",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "filament_type": {
+          "name": "filament_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "machine_used": {
+          "name": "machine_used",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_thumbnail_url": {
+          "name": "image_thumbnail_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_medium_url": {
+          "name": "image_medium_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_full_url": {
+          "name": "image_full_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploader_profile_id": {
+          "name": "uploader_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "view_count": {
+          "name": "view_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "deleted": {
+          "name": "deleted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "blobs_uploader_profile_id_profiles_clerk_user_id_fk": {
+          "name": "blobs_uploader_profile_id_profiles_clerk_user_id_fk",
+          "tableFrom": "blobs",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "uploader_profile_id"
+          ],
+          "columnsTo": [
+            "clerk_user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.profiles": {
+      "name": "profiles",
+      "schema": "",
+      "columns": {
+        "clerk_user_id": {
+          "name": "clerk_user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "upload_count_today": {
+          "name": "upload_count_today",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_upload_date": {
+          "name": "last_upload_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved": {
+          "name": "approved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "banned": {
+          "name": "banned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "is_admin": {
+          "name": "is_admin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ratings": {
+      "name": "ratings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "ratings_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "blob_id": {
+          "name": "blob_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rater_profile_id": {
+          "name": "rater_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ratings_blob_rater_idx": {
+          "name": "ratings_blob_rater_idx",
+          "columns": [
+            {
+              "expression": "blob_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "rater_profile_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ratings_blob_id_blobs_id_fk": {
+          "name": "ratings_blob_id_blobs_id_fk",
+          "tableFrom": "ratings",
+          "tableTo": "blobs",
+          "columnsFrom": [
+            "blob_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ratings_rater_profile_id_profiles_clerk_user_id_fk": {
+          "name": "ratings_rater_profile_id_profiles_clerk_user_id_fk",
+          "tableFrom": "ratings",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "rater_profile_id"
+          ],
+          "columnsTo": [
+            "clerk_user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

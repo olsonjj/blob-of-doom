@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft, Eye, Pencil, Trash2, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@clerk/tanstack-react-start'
 import { fetchBlobDetail, type BlobDetail } from '../../../db/blob-detail.func'
 import { submitRating } from '../../../db/rating.func'
+import { updateBlob, softDeleteBlob } from '../../../db/blob-edit.func'
 import { HexagonRating } from '../../../components/HexagonRating'
 
 export const Route = createFileRoute('/gallery/$blobId/')({
@@ -12,11 +13,28 @@ export const Route = createFileRoute('/gallery/$blobId/')({
 
 function BlobDetailPage() {
   const { blobId } = Route.useParams()
-  const { isSignedIn } = useAuth()
+  const { isSignedIn, userId } = useAuth()
+  const router = useRouter()
 
   const [blob, setBlob] = useState<BlobDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Edit mode
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editDateOccurred, setEditDateOccurred] = useState('')
+  const [editFilamentType, setEditFilamentType] = useState('')
+  const [editMachineUsed, setEditMachineUsed] = useState('')
+  const [editErrors, setEditErrors] = useState<{ field: string; message: string }[]>([])
+  const [editSubmitting, setEditSubmitting] = useState(false)
+
+  // Delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const isOwner = !!(userId && blob && blob.uploaderProfileId === userId)
 
   useEffect(() => {
     const id = parseInt(blobId, 10)
@@ -38,7 +56,6 @@ function BlobDetailPage() {
       if (!blob) return
       const id = blob.id
 
-      // Optimistic update
       setBlob((prev) => {
         if (!prev) return prev
         const oldUserRating = prev.userRating
@@ -71,7 +88,6 @@ function BlobDetailPage() {
             : prev,
         )
       } catch {
-        // Revert on error — refetch
         const fresh = await fetchBlobDetail({ data: id })
         setBlob(fresh)
       }
@@ -79,7 +95,77 @@ function BlobDetailPage() {
     [blob],
   )
 
-  // Loading state
+  // ── Edit handlers ──────────────────────────────────────────────────────
+
+  const startEditing = () => {
+    if (!blob) return
+    setEditTitle(blob.title)
+    setEditDescription(blob.description ?? '')
+    setEditDateOccurred(blob.dateOccurred)
+    setEditFilamentType(blob.filamentType)
+    setEditMachineUsed(blob.machineUsed)
+    setEditErrors([])
+    setEditing(true)
+  }
+
+  const cancelEditing = () => {
+    setEditing(false)
+    setEditErrors([])
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditErrors([])
+    setEditSubmitting(true)
+
+    try {
+      await updateBlob({
+        data: {
+          blobId: blob!.id,
+          title: editTitle,
+          description: editDescription || null,
+          dateOccurred: editDateOccurred,
+          filamentType: editFilamentType,
+          machineUsed: editMachineUsed,
+        },
+      })
+
+      // Refresh the blob data
+      const fresh = await fetchBlobDetail({ data: blob!.id })
+      setBlob(fresh)
+      setEditing(false)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Update failed'
+      try {
+        const parsed = JSON.parse(message)
+        if (Array.isArray(parsed)) {
+          setEditErrors(parsed)
+        } else {
+          setEditErrors([{ field: 'general', message }])
+        }
+      } catch {
+        setEditErrors([{ field: 'general', message }])
+      }
+    } finally {
+      setEditSubmitting(false)
+    }
+  }
+
+  // ── Delete handler ─────────────────────────────────────────────────────
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await softDeleteBlob({ data: { blobId: blob!.id } })
+      router.navigate({ to: '/gallery' })
+    } catch {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  // ── Loading state ──────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-12">
@@ -88,7 +174,8 @@ function BlobDetailPage() {
     )
   }
 
-  // Error state
+  // ── Error state ────────────────────────────────────────────────────────
+
   if (error || !blob) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-12 text-center">
@@ -116,6 +203,8 @@ function BlobDetailPage() {
     day: 'numeric',
   })
 
+  const editFieldError = (field: string) => editErrors.find((e) => e.field === field)?.message
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       {/* Back button */}
@@ -138,78 +227,280 @@ function BlobDetailPage() {
           />
         </div>
 
-        {/* Right: Details */}
-        <div className="flex flex-col gap-6">
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-noir-100 leading-tight">
-            {blob.title}
-          </h1>
+        {/* Right: Details or Edit Form */}
+        {editing ? (
+          /* ── Edit Form ──────────────────────────────────────────────── */
+          <form onSubmit={handleEditSubmit} className="flex flex-col gap-5" noValidate>
+            <h2 className="text-xl font-bold text-noir-100">Edit Blob</h2>
 
-          {/* Description */}
-          {blob.description && (
+            {editFieldError('general') && (
+              <div className="flex items-start gap-3 p-4 bg-doom-500/10 border border-doom-500/30 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-doom-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-doom-300">{editFieldError('general')}</p>
+              </div>
+            )}
+
+            {/* Title */}
             <div>
-              <h2 className="text-sm font-medium text-noir-400 uppercase tracking-wider mb-2">
-                Description
-              </h2>
-              <p className="text-noir-200 leading-relaxed">{blob.description}</p>
+              <label htmlFor="edit-title" className="block text-sm font-medium text-noir-200 mb-2">
+                Title <span className="text-doom-400">*</span>
+              </label>
+              <input
+                id="edit-title"
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                maxLength={200}
+                className={`w-full px-4 py-3 bg-noir-900 border rounded-lg text-noir-100 placeholder:text-noir-500 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors ${
+                  editFieldError('title') ? 'border-doom-500' : 'border-noir-700'
+                }`}
+              />
+              {editFieldError('title') && (
+                <p className="mt-1.5 text-sm text-doom-400">{editFieldError('title')}</p>
+              )}
             </div>
-          )}
 
-          {/* Doom Scale — interactive for signed-in users */}
-          <div className="bg-noir-900 border border-noir-700 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-noir-300">Doom Scale</span>
-              <span className="text-xs text-noir-500">
-                {blob.ratingCount} {blob.ratingCount === 1 ? 'rating' : 'ratings'}
+            {/* Description */}
+            <div>
+              <label htmlFor="edit-description" className="block text-sm font-medium text-noir-200 mb-2">
+                Description <span className="text-noir-400">(optional)</span>
+              </label>
+              <textarea
+                id="edit-description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={4}
+                maxLength={500}
+                className="w-full px-4 py-3 bg-noir-900 border border-noir-700 rounded-lg text-noir-100 placeholder:text-noir-500 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors resize-y"
+              />
+              <p className="mt-1 text-xs text-noir-500 text-right">{editDescription.length}/500</p>
+            </div>
+
+            {/* Date occurred */}
+            <div>
+              <label htmlFor="edit-date" className="block text-sm font-medium text-noir-200 mb-2">
+                Date Occurred <span className="text-doom-400">*</span>
+              </label>
+              <input
+                id="edit-date"
+                type="date"
+                value={editDateOccurred}
+                onChange={(e) => setEditDateOccurred(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className={`w-full px-4 py-3 bg-noir-900 border rounded-lg text-noir-100 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors ${
+                  editFieldError('dateOccurred') ? 'border-doom-500' : 'border-noir-700'
+                }`}
+              />
+              {editFieldError('dateOccurred') && (
+                <p className="mt-1.5 text-sm text-doom-400">{editFieldError('dateOccurred')}</p>
+              )}
+            </div>
+
+            {/* Filament type */}
+            <div>
+              <label htmlFor="edit-filament" className="block text-sm font-medium text-noir-200 mb-2">
+                Filament Type <span className="text-doom-400">*</span>
+              </label>
+              <input
+                id="edit-filament"
+                type="text"
+                value={editFilamentType}
+                onChange={(e) => setEditFilamentType(e.target.value)}
+                maxLength={100}
+                className={`w-full px-4 py-3 bg-noir-900 border rounded-lg text-noir-100 placeholder:text-noir-500 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors ${
+                  editFieldError('filamentType') ? 'border-doom-500' : 'border-noir-700'
+                }`}
+              />
+              {editFieldError('filamentType') && (
+                <p className="mt-1.5 text-sm text-doom-400">{editFieldError('filamentType')}</p>
+              )}
+            </div>
+
+            {/* Machine used */}
+            <div>
+              <label htmlFor="edit-machine" className="block text-sm font-medium text-noir-200 mb-2">
+                Machine Used <span className="text-doom-400">*</span>
+              </label>
+              <input
+                id="edit-machine"
+                type="text"
+                value={editMachineUsed}
+                onChange={(e) => setEditMachineUsed(e.target.value)}
+                maxLength={100}
+                className={`w-full px-4 py-3 bg-noir-900 border rounded-lg text-noir-100 placeholder:text-noir-500 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors ${
+                  editFieldError('machineUsed') ? 'border-doom-500' : 'border-noir-700'
+                }`}
+              />
+              {editFieldError('machineUsed') && (
+                <p className="mt-1.5 text-sm text-doom-400">{editFieldError('machineUsed')}</p>
+              )}
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={editSubmitting}
+                className="px-5 py-2.5 bg-[#ff5a0a] text-[#14100e] text-sm font-black uppercase tracking-[-0.01em] hover:bg-[#ff7a1a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {editSubmitting ? 'Saving…' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={cancelEditing}
+                className="px-5 py-2.5 border border-noir-600 text-noir-300 text-sm font-black uppercase tracking-[-0.01em] hover:border-noir-400 hover:text-noir-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="ml-auto inline-flex items-center gap-1.5 px-5 py-2.5 border border-doom-500/40 text-doom-400 text-sm font-black uppercase tracking-[-0.01em] hover:bg-doom-500/10 hover:border-doom-400 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* ── View Mode ───────────────────────────────────────────────── */
+          <div className="flex flex-col gap-6">
+            {/* Title + owner actions */}
+            <div>
+              <h1 className="text-3xl font-bold text-noir-100 leading-tight">
+                {blob.title}
+              </h1>
+              {isOwner && (
+                <div className="flex items-center gap-3 mt-3">
+                  <button
+                    onClick={startEditing}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#ff5a0a] text-[#14100e] text-xs font-black uppercase tracking-[-0.01em] hover:bg-[#ff7a1a] transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            {blob.description && (
+              <div>
+                <h2 className="text-sm font-medium text-noir-400 uppercase tracking-wider mb-2">
+                  Description
+                </h2>
+                <p className="text-noir-200 leading-relaxed">{blob.description}</p>
+              </div>
+            )}
+
+            {/* Doom Scale — interactive for signed-in users */}
+            <div className="bg-noir-900 border border-noir-700 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-noir-300">Doom Scale</span>
+                <span className="text-xs text-noir-500">
+                  {blob.ratingCount} {blob.ratingCount === 1 ? 'rating' : 'ratings'}
+                </span>
+              </div>
+              <HexagonRating
+                rating={blob.averageRating}
+                size={24}
+                interactive={isSignedIn ?? false}
+                userRating={blob.userRating}
+                onRate={isSignedIn ? handleRate : undefined}
+                isAuthenticated={isSignedIn ?? false}
+              />
+            </div>
+
+            {/* Metadata grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
+                <span className="text-xs text-noir-500 uppercase tracking-wider">
+                  Filament Type
+                </span>
+                <p className="mt-1 text-noir-200 font-medium">{blob.filamentType}</p>
+              </div>
+              <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
+                <span className="text-xs text-noir-500 uppercase tracking-wider">
+                  Machine Used
+                </span>
+                <p className="mt-1 text-noir-200 font-medium">{blob.machineUsed}</p>
+              </div>
+              <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
+                <span className="text-xs text-noir-500 uppercase tracking-wider">
+                  Date Occurred
+                </span>
+                <p className="mt-1 text-noir-200 font-medium">{occurredDate}</p>
+              </div>
+              <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
+                <span className="text-xs text-noir-500 uppercase tracking-wider">
+                  Uploaded
+                </span>
+                <p className="mt-1 text-noir-200 font-medium">{formattedDate}</p>
+              </div>
+            </div>
+
+            {/* View count */}
+            <div className="flex items-center gap-2 text-xs text-noir-500 justify-end">
+              <Eye className="w-3.5 h-3.5" />
+              <span>
+                {blob.viewCount} {blob.viewCount === 1 ? 'view' : 'views'}
               </span>
             </div>
-            <HexagonRating
-              rating={blob.averageRating}
-              size={24}
-              interactive={isSignedIn ?? false}
-              userRating={blob.userRating}
-              onRate={isSignedIn ? handleRate : undefined}
-              isAuthenticated={isSignedIn ?? false}
-            />
           </div>
+        )}
+      </div>
 
-          {/* Metadata grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-              <span className="text-xs text-noir-500 uppercase tracking-wider">
-                Filament Type
-              </span>
-              <p className="mt-1 text-noir-200 font-medium">{blob.filamentType}</p>
+      {/* ── Delete Confirmation Dialog ──────────────────────────────────── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => !deleting && setShowDeleteConfirm(false)}
+          />
+          {/* Dialog */}
+          <div className="relative bg-noir-900 border border-noir-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-doom-500/10 rounded-full shrink-0">
+                <AlertTriangle className="w-6 h-6 text-doom-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-noir-100">Delete this blob?</h3>
+                <p className="mt-2 text-sm text-noir-400 leading-relaxed">
+                  This will permanently remove &ldquo;{blob.title}&rdquo; from the gallery.
+                  This action cannot be undone.
+                </p>
+              </div>
             </div>
-            <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-              <span className="text-xs text-noir-500 uppercase tracking-wider">
-                Machine Used
-              </span>
-              <p className="mt-1 text-noir-200 font-medium">{blob.machineUsed}</p>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-doom-500 text-white text-sm font-bold rounded-lg hover:bg-doom-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Deleting…
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </button>
             </div>
-            <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-              <span className="text-xs text-noir-500 uppercase tracking-wider">
-                Date Occurred
-              </span>
-              <p className="mt-1 text-noir-200 font-medium">{occurredDate}</p>
-            </div>
-            <div className="bg-noir-900 border border-noir-700 rounded-lg p-4">
-              <span className="text-xs text-noir-500 uppercase tracking-wider">
-                Uploaded
-              </span>
-              <p className="mt-1 text-noir-200 font-medium">{formattedDate}</p>
-            </div>
-          </div>
-
-          {/* View count */}
-          <div className="flex items-center gap-2 text-xs text-noir-500">
-            <Eye className="w-3.5 h-3.5" />
-            <span>
-              {blob.viewCount} {blob.viewCount === 1 ? 'view' : 'views'}
-            </span>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

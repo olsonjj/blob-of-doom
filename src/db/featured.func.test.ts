@@ -2,15 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { limitMock, orderByMock, groupByMock, leftJoinMock, fromMock, selectMock } = vi.hoisted(() => {
+const { limitMock, orderByMock, groupByMock, whereMock, leftJoinMock, fromMock, selectMock } = vi.hoisted(() => {
   const limitMock = vi.fn().mockReturnValue(Promise.resolve([]))
   const orderByMock = vi.fn().mockReturnValue({ limit: limitMock })
   const groupByMock = vi.fn().mockReturnValue({ orderBy: orderByMock })
-  const leftJoinMock = vi.fn().mockReturnValue({ groupBy: groupByMock })
+  const whereMock = vi.fn().mockReturnValue({ groupBy: groupByMock })
+  const leftJoinMock = vi.fn().mockReturnValue({ where: whereMock })
   const fromMock = vi.fn().mockReturnValue({ leftJoin: leftJoinMock })
   const selectMock = vi.fn().mockReturnValue({ from: fromMock })
 
-  return { limitMock, orderByMock, groupByMock, leftJoinMock, fromMock, selectMock }
+  return { limitMock, orderByMock, groupByMock, whereMock, leftJoinMock, fromMock, selectMock }
 })
 
 vi.mock('./index', () => ({

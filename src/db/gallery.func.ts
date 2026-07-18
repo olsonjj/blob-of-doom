@@ -53,6 +53,7 @@ export async function queryGallery(params: GalleryQueryParams): Promise<GalleryB
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
+    .where(eq(blobs.deleted, 0))
     .groupBy(blobs.id)
     .orderBy(
       sort === 'doom'

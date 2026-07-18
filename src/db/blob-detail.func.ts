@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from './index'
 import { blobs, ratings } from './schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ export async function queryBlobDetail(
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
-    .where(eq(blobs.id, blobId))
+    .where(and(eq(blobs.id, blobId), eq(blobs.deleted, 0)))
     .groupBy(blobs.id)
     .limit(1)
 

@@ -8,6 +8,13 @@
       "when": 1784263367731,
       "tag": "0000_cloudy_spirit",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784346344344,
+      "tag": "0001_add_soft_delete",
+      "breakpoints": true
     }
   ]
 }

@@ -19,10 +19,6 @@ function Gallery() {
       .finally(() => setLoading(false))
   }, [sort, order])
 
-  const handleBlobDeleted = (blobId: number) => {
-    setBlobs((prev) => prev.filter((b) => b.id !== blobId))
-  }
-
   const toggleSort = (field: SortField) => {
     if (sort === field) {
       setOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
@@ -74,7 +70,7 @@ function Gallery() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {blobs.map((blob) => (
-            <BlobCard key={blob.id} blob={blob} onDelete={() => handleBlobDeleted(blob.id)} />
+            <BlobCard key={blob.id} blob={blob} />
           ))}
         </div>
       )}

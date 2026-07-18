@@ -1,0 +1,1 @@
+ALTER TABLE "blobs" ADD COLUMN "deleted" integer DEFAULT 0 NOT NULL;
