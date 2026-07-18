@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { ArrowRight, Upload, UserPlus } from 'lucide-react'
 import { useAuth } from '@clerk/tanstack-react-start'
 import { fetchFeatured, type FeaturedBlob } from '../db/featured.func'
 import { BlobCard } from '../components/BlobCard'
@@ -26,58 +25,61 @@ function Home() {
   return (
     <div>
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden">
-        {/* Background image — blurred and faded */}
+      <div className="relative overflow-hidden bg-noir-950 border-b border-[#1b2929]">
+        {/* Background image - blurred and faded */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 scale-105 bg-cover bg-center blur-[6px] opacity-75"
           style={{ backgroundImage: `url(${heroBg})` }}
         />
-        {/* Blur + dark overlay for readability */}
-        <div className="absolute inset-0 bg-noir-950/60 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,10,12,0.18),rgba(3,6,7,0.9)_74%),linear-gradient(90deg,rgba(0,0,0,0.76),rgba(0,0,0,0.26)_46%,rgba(0,0,0,0.82))]" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-noir-950 to-transparent" />
 
         {/* Hero content */}
-        <div className="relative max-w-4xl mx-auto px-4 py-32 text-center">
-          <h1 className="text-5xl font-extrabold tracking-tight text-noir-100">
-            Engineering Noir Archive
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-14 lg:py-16 flex flex-col items-center justify-center text-center">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-[#8c5b2e] bg-black/30 px-3.5 py-1 text-[0.68rem] sm:text-xs font-black uppercase tracking-[0.26em] text-[#b6e600] shadow-[0_0_28px_rgba(255,90,10,0.18)]">
+            <span className="h-2 w-2 rounded-full bg-[#8eb500] shadow-[0_0_10px_rgba(182,230,0,0.7)]" />
+            New Doom Detected
+          </div>
+          <h1 className="mt-5 text-2xl sm:text-3xl lg:text-4xl font-black uppercase leading-[0.96] tracking-[0.01em] text-[#f2f2ee] drop-shadow-[0_5px_24px_rgba(0,0,0,0.85)]">
+            The Beauty of{' '}
+            <span className="italic text-[#ffad98]">Technical Chaos</span>
           </h1>
-          <p className="mt-6 text-lg text-noir-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-4 text-xs sm:text-sm text-[#e1bdb3] max-w-3xl mx-auto leading-relaxed font-semibold drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
             We document the most spectacular 3D printing failures—where extrusion
             meets entropy. Every blob tells a story of a failed dream and a
             miscalculated G-code. If this scares you, better take up knitting
             instead.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <Link
-              to="/gallery"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-doom-500 text-white rounded-lg font-semibold hover:bg-doom-400 transition-colors"
-            >
-              Browse Gallery
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+          <div className="mt-6 flex w-full max-w-xl flex-col sm:flex-row items-stretch justify-center gap-3 sm:gap-4">
             {isSignedIn ? (
               <Link
                 to="/upload"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-noir-600 text-noir-200 rounded-lg font-semibold hover:border-noir-400 hover:text-noir-100 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2.5 bg-[#ff5a0a] text-[#15100d] text-xs font-black uppercase tracking-[-0.01em] hover:bg-[#ff7a1a] transition-colors"
               >
-                Upload Your Blob
-                <Upload className="w-4 h-4" />
+                Upload Your Doom
               </Link>
             ) : (
               <Link
                 to="/sign-up"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-noir-600 text-noir-200 rounded-lg font-semibold hover:border-noir-400 hover:text-noir-100 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2.5 bg-[#ff5a0a] text-[#15100d] text-xs font-black uppercase tracking-[-0.01em] hover:bg-[#ff7a1a] transition-colors"
               >
-                Sign Up
-                <UserPlus className="w-4 h-4" />
+                Upload Your Doom
               </Link>
             )}
+            <Link
+              to="/gallery"
+              className="inline-flex items-center justify-center border border-[#6f7300] bg-black/10 px-4 py-2.5 text-xs font-black uppercase tracking-[-0.01em] text-[#c5f000] hover:border-[#c5f000] hover:bg-[#c5f000] hover:text-[#11100f] transition-colors"
+            >
+              Browse the Abyss
+            </Link>
           </div>
         </div>
       </div>
 
       {/* ── Featured Feed ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-24 text-center">
-        <div className="border-t border-noir-800 pt-16">
+        <div className="border-t border-noir-800 pt-10">
           <h2 className="text-2xl font-bold text-noir-200">Featured Blobs of Doom</h2>
           <p className="mt-2 text-noir-400 text-sm">
             A random selection from the hall of shame.
