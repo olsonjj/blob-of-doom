@@ -1,35 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ratings } from './schema';
+
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
 const {
-  updateSetMock,
-  updateWhereAndMock,
-  updateReturningMock,
-  updateMock,
   insertValuesMock,
+  insertOnConflictMock,
   insertReturningMock,
   insertMock,
   selectFromMock,
   selectWhereMock,
   selectMock,
 } = vi.hoisted(() => {
-  const updateSetMock = vi.fn();
-  const updateWhereAndMock = vi.fn();
-  const updateReturningMock = vi.fn();
-  const updateMock = vi.fn().mockReturnValue({
-    set: updateSetMock.mockReturnValue({
-      where: updateWhereAndMock.mockReturnValue({
-        returning: updateReturningMock,
-      }),
-    }),
-  });
-
   const insertValuesMock = vi.fn();
+  const insertOnConflictMock = vi.fn();
   const insertReturningMock = vi.fn();
   const insertMock = vi.fn().mockReturnValue({
     values: insertValuesMock.mockReturnValue({
-      returning: insertReturningMock,
+      onConflictDoUpdate: insertOnConflictMock.mockReturnValue({
+        returning: insertReturningMock,
+      }),
     }),
   });
 
@@ -42,22 +33,18 @@ const {
   });
 
   return {
-    updateSetMock,
-    updateWhereAndMock,
-    updateReturningMock,
     insertValuesMock,
+    insertOnConflictMock,
     insertReturningMock,
+    insertMock,
     selectFromMock,
     selectWhereMock,
-    updateMock,
-    insertMock,
     selectMock,
   };
 });
 
 vi.mock('./index', () => ({
   db: {
-    update: updateMock,
     insert: insertMock,
     select: selectMock,
   },
@@ -140,10 +127,7 @@ describe('upsertRating', () => {
     vi.clearAllMocks();
   });
 
-  it('inserts a new rating when no existing rating found', async () => {
-    // Update returns empty (no existing rating)
-    updateReturningMock.mockResolvedValueOnce([]);
-    // Insert returns the new row
+  it('performs a single atomic upsert query', async () => {
     insertReturningMock.mockResolvedValueOnce([
       {
         id: 1,
@@ -157,8 +141,7 @@ describe('upsertRating', () => {
 
     const result = await upsertRating(1, 'user_1', 4);
 
-    expect(updateSetMock).toHaveBeenCalledWith(expect.objectContaining({ score: 4 }));
-    expect(updateWhereAndMock).toHaveBeenCalled();
+    // Single insert call with the rating values
     expect(insertValuesMock).toHaveBeenCalledWith(
       expect.objectContaining({
         blobId: 1,
@@ -166,44 +149,53 @@ describe('upsertRating', () => {
         score: 4,
       }),
     );
+    // onConflictDoUpdate called with the unique target and update set
+    expect(insertOnConflictMock).toHaveBeenCalledWith({
+      target: [ratings.blobId, ratings.raterProfileId],
+      set: expect.objectContaining({ score: 4, updatedAt: expect.any(Date) }),
+    });
     expect(result.score).toBe(4);
     expect(result.blobId).toBe(1);
   });
 
-  it('updates an existing rating when one is found', async () => {
-    // Update returns the existing row (user changing their rating)
-    updateReturningMock.mockResolvedValueOnce([
+  it('updates the score when a rating already exists (via conflict)', async () => {
+    insertReturningMock.mockResolvedValueOnce([
       {
         id: 1,
         blobId: 1,
         raterProfileId: 'user_1',
         score: 5,
-        createdAt: new Date(),
+        createdAt: new Date('2024-01-01'),
         updatedAt: new Date(),
       },
     ]);
 
     const result = await upsertRating(1, 'user_1', 5);
 
-    // Should not call insert
-    expect(insertValuesMock).not.toHaveBeenCalled();
+    // Still a single insert+conflict query — no separate update path
+    expect(insertValuesMock).toHaveBeenCalledTimes(1);
+    expect(insertOnConflictMock).toHaveBeenCalledTimes(1);
     expect(result.score).toBe(5);
   });
 
-  it('updates the updatedAt timestamp on upsert', async () => {
-    updateReturningMock.mockResolvedValueOnce([
+  it('sets updatedAt to a fresh Date on every upsert', async () => {
+    insertReturningMock.mockResolvedValueOnce([
       {
         id: 1,
         blobId: 1,
         raterProfileId: 'user_1',
         score: 3,
         createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-06-15'),
+        updatedAt: new Date(),
       },
     ]);
 
-    const result = await upsertRating(1, 'user_1', 3);
-    expect(result.updatedAt).toBeInstanceOf(Date);
+    await upsertRating(1, 'user_1', 3);
+
+    expect(insertOnConflictMock).toHaveBeenCalledWith({
+      target: [ratings.blobId, ratings.raterProfileId],
+      set: expect.objectContaining({ updatedAt: expect.any(Date) }),
+    });
   });
 });
 

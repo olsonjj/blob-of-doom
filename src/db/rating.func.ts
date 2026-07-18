@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { checkNotBanned } from './admin.func';
 import { db } from './index';
@@ -51,6 +51,8 @@ export function validateRatingInput(input: unknown): {
 
 /**
  * Insert or update a rating for the given user and blob.
+ * Uses a single atomic ON CONFLICT DO UPDATE query so concurrent requests
+ * from the same user can't both see "no rating" and both attempt inserts.
  * Returns the upserted rating record.
  */
 export async function upsertRating(
@@ -58,19 +60,16 @@ export async function upsertRating(
   raterProfileId: string,
   score: number,
 ): Promise<typeof ratings.$inferSelect> {
-  // Try update first (user changing their existing rating)
-  const [updated] = await db
-    .update(ratings)
-    .set({ score, updatedAt: new Date() })
-    .where(and(eq(ratings.blobId, blobId), eq(ratings.raterProfileId, raterProfileId)))
+  const [upserted] = await db
+    .insert(ratings)
+    .values({ blobId, raterProfileId, score })
+    .onConflictDoUpdate({
+      target: [ratings.blobId, ratings.raterProfileId],
+      set: { score, updatedAt: new Date() },
+    })
     .returning();
 
-  if (updated) return updated;
-
-  // No existing rating — insert new
-  const [inserted] = await db.insert(ratings).values({ blobId, raterProfileId: raterProfileId, score }).returning();
-
-  return inserted;
+  return upserted;
 }
 
 // ── Average calculation (extracted for testability) ─────────────────────────
