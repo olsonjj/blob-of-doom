@@ -1,5 +1,6 @@
 # SEC-007 — Atomic upsert for ratings (eliminate race condition)
 
+**Status:** resolved
 **Priority:** 🟡 Cleanup | **Estimate:** 30m | **Files:** `src/db/rating.func.ts`
 **Wave:** 3
 

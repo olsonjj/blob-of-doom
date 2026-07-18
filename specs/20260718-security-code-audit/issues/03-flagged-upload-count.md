@@ -1,5 +1,6 @@
 # SEC-003 — Flagged uploads must count toward daily limit
 
+**Status:** resolved
 **Priority:** 🔴 Fix Now | **Estimate:** 15m | **Files:** `src/db/upload.func.ts`
 **Wave:** 1
 

@@ -1,7 +1,10 @@
 # SEC-014 — Decompose admin/index.tsx (~700 lines)
 
+**Status:** deferred
 **Priority:** 🔵 Defer | **Estimate:** 3h | **Files:** `src/routes/admin/index.tsx`
 **Wave:** 5
+
+> **Deferred:** Waves 1–3 (SEC-001 through SEC-013) are complete and pushed. This item and SEC-015 are deferred to a future session.
 
 ## Problem
 

@@ -1,5 +1,6 @@
 # SEC-009 — Fix removeBlob delete ordering (DB before Blob)
 
+**Status:** resolved
 **Priority:** 🟡 Cleanup | **Estimate:** 15m | **Files:** `src/db/admin.func.ts`
 **Wave:** 3
 

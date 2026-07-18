@@ -1,5 +1,6 @@
 # SEC-008 — Clean up orphaned Vercel Blob files on upload failure
 
+**Status:** resolved
 **Priority:** 🟡 Cleanup | **Estimate:** 45m | **Files:** `src/db/upload.func.ts`
 **Wave:** 3
 

@@ -1,5 +1,6 @@
 # SEC-004 — TOCTOU race condition on upload limit
 
+**Status:** resolved
 **Priority:** 🟠 Fix Soon | **Estimate:** 1.5h | **Files:** `src/db/upload.func.ts`
 **Wave:** 2
 

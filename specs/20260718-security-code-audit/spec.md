@@ -1,7 +1,7 @@
 # Implementation Spec — Security & Code Quality Remediation
 
 **Based on:** `audit.md` (2025-07-18)  
-**Status:** Aligned — ready for implementation  
+**Status:** Waves 1–3 complete (SEC-001–013 resolved). Tier 4 deferred (SEC-014, SEC-015).  
 **Priority tiers:** Fix Now → Fix Soon → Cleanup → Defer
 
 ---

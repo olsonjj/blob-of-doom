@@ -1,5 +1,6 @@
 # SEC-012 — Restore Drizzle type safety in db Proxy
 
+**Status:** resolved
 **Priority:** 🟡 Cleanup | **Estimate:** 30m | **Files:** `src/db/index.ts`
 **Wave:** 4
 

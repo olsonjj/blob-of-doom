@@ -1,7 +1,10 @@
 # SEC-015 — Test coverage for untested DB modules
 
+**Status:** deferred
 **Priority:** 🔵 Defer | **Estimate:** 4h | **Files:** `src/db/__tests__/`
 **Wave:** 5
+
+> **Deferred:** Waves 1–3 (SEC-001 through SEC-013) are complete and pushed. This item and SEC-014 are deferred to a future session.
 
 ## Problem
 

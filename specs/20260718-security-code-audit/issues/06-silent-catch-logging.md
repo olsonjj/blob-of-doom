@@ -1,5 +1,6 @@
 # SEC-006 — Replace silent catch blocks with error logging
 
+**Status:** resolved
 **Priority:** 🟠 Fix Soon | **Estimate:** 1h | **Files:** `src/components/EnsureProfile.tsx`, `src/db/blob-detail.func.ts`, `src/routes/admin/index.tsx`
 **Wave:** 2
 
