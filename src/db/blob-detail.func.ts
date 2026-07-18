@@ -97,8 +97,8 @@ export const fetchBlobDetail = createServerFn({ method: 'GET' })
     }
 
     // Increment view count (fire-and-forget, don't block the response)
-    incrementViewCount(blobId).catch(() => {
-      // Silently ignore view count failures
+    incrementViewCount(blobId).catch((err) => {
+      console.error('incrementViewCount failed:', err)
     })
 
     const detail = await queryBlobDetail(blobId, userId)

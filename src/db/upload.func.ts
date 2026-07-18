@@ -170,64 +170,16 @@ export const uploadBlob = createServerFn({ method: 'POST' })
     const today = todayDateString()
     await checkUploadLimit(userId, today)
 
-    // Process image
-    const buffer = Buffer.from(await data.image.arrayBuffer())
-    const variants = await processImageVariants(buffer)
-
-    // Content moderation — run after processing, before upload
-    const { moderateImage } = await import('./moderation.func')
-    const moderation = await moderateImage(buffer)
-
-    // Upload to Vercel Blob (dynamic import — server-only package)
-    const { put } = await import('@vercel/blob')
-    const token = process.env.BLOB_READ_WRITE_TOKEN
-    const storeId = process.env.BLOB_STORE_ID
-    const prefix = `blobs/${userId}/${Date.now()}`
-    const [thumbResult, mediumResult, fullResult] = await Promise.all([
-      put(`${prefix}-thumb.webp`, variants.thumbnail, {
-        access: 'public',
-        contentType: 'image/webp',
-        token,
-        storeId,
-      }),
-      put(`${prefix}-medium.webp`, variants.medium, {
-        access: 'public',
-        contentType: 'image/webp',
-        token,
-        storeId,
-      }),
-      put(`${prefix}-full.webp`, variants.full, {
-        access: 'public',
-        contentType: 'image/webp',
-        token,
-        storeId,
-      }),
-    ])
-
-    // Insert blob record
-    const [newBlob] = await db
-      .insert(blobs)
-      .values({
-        title: data.title,
-        description: data.description,
-        dateOccurred: data.dateOccurred,
-        filamentType: data.filamentType,
-        machineUsed: data.machineUsed,
-        imageThumbnailUrl: thumbResult.url,
-        imageMediumUrl: mediumResult.url,
-        imageFullUrl: fullResult.url,
-        uploaderProfileId: userId,
-        flagged: moderation.flagged ? 1 : 0,
-        moderationScores: moderation.scores,
-      })
-      .returning()
-
-    // Update profile upload count
+    // Increment count immediately to close the TOCTOU race window.
+    // If any subsequent step fails, the count is rolled back in the catch.
     const [profile] = await db
       .select()
       .from(profiles)
       .where(eq(profiles.clerkUserId, userId))
       .limit(1)
+
+    const previousCount = profile?.uploadCountToday ?? 0
+    const previousDate = profile?.lastUploadDate ?? null
 
     const newCount =
       profile && profile.lastUploadDate === today
@@ -238,6 +190,71 @@ export const uploadBlob = createServerFn({ method: 'POST' })
       .update(profiles)
       .set({ uploadCountToday: newCount, lastUploadDate: today })
       .where(eq(profiles.clerkUserId, userId))
+
+    // Process image, moderate, upload, insert — with rollback on failure
+    let newBlob: any
+    try {
+      // Process image
+      const buffer = Buffer.from(await data.image.arrayBuffer())
+      const variants = await processImageVariants(buffer)
+
+      // Content moderation — run after processing, before upload
+      const { moderateImage } = await import('./moderation.func')
+      const moderation = await moderateImage(buffer)
+
+      // Upload to Vercel Blob (dynamic import — server-only package)
+      const { put } = await import('@vercel/blob')
+      const token = process.env.BLOB_READ_WRITE_TOKEN
+      const storeId = process.env.BLOB_STORE_ID
+      const prefix = `blobs/${userId}/${Date.now()}`
+      const [thumbResult, mediumResult, fullResult] = await Promise.all([
+        put(`${prefix}-thumb.webp`, variants.thumbnail, {
+          access: 'public',
+          contentType: 'image/webp',
+          token,
+          storeId,
+        }),
+        put(`${prefix}-medium.webp`, variants.medium, {
+          access: 'public',
+          contentType: 'image/webp',
+          token,
+          storeId,
+        }),
+        put(`${prefix}-full.webp`, variants.full, {
+          access: 'public',
+          contentType: 'image/webp',
+          token,
+          storeId,
+        }),
+      ])
+
+      // Insert blob record
+      const [inserted] = await db
+        .insert(blobs)
+        .values({
+          title: data.title,
+          description: data.description,
+          dateOccurred: data.dateOccurred,
+          filamentType: data.filamentType,
+          machineUsed: data.machineUsed,
+          imageThumbnailUrl: thumbResult.url,
+          imageMediumUrl: mediumResult.url,
+          imageFullUrl: fullResult.url,
+          uploaderProfileId: userId,
+          flagged: moderation.flagged ? 1 : 0,
+          moderationScores: moderation.scores,
+        })
+        .returning()
+
+      newBlob = inserted
+    } catch (err) {
+      // Rollback: decrement the count so the daily slot isn't permanently consumed
+      await db
+        .update(profiles)
+        .set({ uploadCountToday: previousCount, lastUploadDate: previousDate })
+        .where(eq(profiles.clerkUserId, userId))
+      throw err
+    }
 
     return newBlob as Omit<typeof newBlob, 'moderationScores'> & { moderationScores: Record<string, number> | null }
   })

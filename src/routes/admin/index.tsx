@@ -458,6 +458,16 @@ function FlaggedBlobCard({
               <span>{blob.machineUsed}</span>
             </div>
 
+            {/* Moderation unavailable warning */}
+            {(scores as Record<string, number>).moderationUnavailable === 1 && (
+              <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
+                <p className="text-xs text-yellow-300">
+                  Moderation service was unavailable — flagged for manual review.
+                </p>
+              </div>
+            )}
+
             {/* Moderation scores */}
             <div className="mt-3">
               <p className="text-xs font-medium text-noir-400 mb-1.5">
@@ -537,12 +547,15 @@ function AdminDashboard() {
 
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null)
   const [storageLoading, setStorageLoading] = useState(true)
+  const [storageError, setStorageError] = useState<string | null>(null)
 
   const [blobs, setBlobs] = useState<GalleryBlob[]>([])
   const [blobsLoading, setBlobsLoading] = useState(true)
+  const [blobsError, setBlobsError] = useState<string | null>(null)
 
   const [flaggedBlobs, setFlaggedBlobs] = useState<FlaggedBlob[]>([])
   const [flaggedLoading, setFlaggedLoading] = useState(false)
+  const [flaggedError, setFlaggedError] = useState<string | null>(null)
 
   // Confirmation modal state
   const [confirm, setConfirm] = useState<{
@@ -572,11 +585,13 @@ function AdminDashboard() {
 
   const loadStorage = useCallback(async () => {
     setStorageLoading(true)
+    setStorageError(null)
     try {
       const data = await getStorageStats()
       setStorageStats(data)
-    } catch {
-      // Silently fail — storage stats are non-critical
+    } catch (err) {
+      console.error('loadStorage failed:', err)
+      setStorageError('Failed to load storage stats')
     } finally {
       setStorageLoading(false)
     }
@@ -584,11 +599,13 @@ function AdminDashboard() {
 
   const loadBlobs = useCallback(async () => {
     setBlobsLoading(true)
+    setBlobsError(null)
     try {
       const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } })
       setBlobs(data)
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('loadBlobs failed:', err)
+      setBlobsError('Failed to load blobs')
     } finally {
       setBlobsLoading(false)
     }
@@ -596,11 +613,13 @@ function AdminDashboard() {
 
   const loadFlagged = useCallback(async () => {
     setFlaggedLoading(true)
+    setFlaggedError(null)
     try {
       const data = await getFlaggedBlobs()
       setFlaggedBlobs(data)
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error('loadFlagged failed:', err)
+      setFlaggedError('Failed to load flagged blobs')
     } finally {
       setFlaggedLoading(false)
     }
@@ -780,7 +799,19 @@ function AdminDashboard() {
             <HardDrive className="w-5 h-5 text-noir-400" />
             Storage
           </h2>
-          <StorageCards stats={storageStats} loading={storageLoading} />
+          {storageError ? (
+            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
+              <p className="text-sm text-doom-300 mb-3">{storageError}</p>
+              <button
+                onClick={loadStorage}
+                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <StorageCards stats={storageStats} loading={storageLoading} />
+          )}
         </section>
       )}
 
@@ -864,7 +895,17 @@ function AdminDashboard() {
             )}
           </h2>
 
-          {blobsLoading ? (
+          {blobsError ? (
+            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
+              <p className="text-sm text-doom-300 mb-3">{blobsError}</p>
+              <button
+                onClick={loadBlobs}
+                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : blobsLoading ? (
             <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
               <div className="p-4 animate-pulse space-y-3">
                 {Array.from({ length: 3 }, (_, i) => (
@@ -926,7 +967,17 @@ function AdminDashboard() {
             )}
           </h2>
 
-          {flaggedLoading ? (
+          {flaggedError ? (
+            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
+              <p className="text-sm text-doom-300 mb-3">{flaggedError}</p>
+              <button
+                onClick={loadFlagged}
+                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : flaggedLoading ? (
             <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
               <div className="p-4 animate-pulse space-y-3">
                 {Array.from({ length: 3 }, (_, i) => (

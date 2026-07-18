@@ -34,6 +34,7 @@ function UploadPage() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [flagged, setFlagged] = useState(false)
+  const [moderationUnavailable, setModerationUnavailable] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -133,6 +134,9 @@ function UploadPage() {
       setSuccess(true)
       if (result.flagged === 1) {
         setFlagged(true)
+        if (result.moderationScores && (result.moderationScores as Record<string, number>).moderationUnavailable === 1) {
+          setModerationUnavailable(true)
+        }
       } else {
         // Redirect to gallery after a brief pause so the user sees the success state
         setTimeout(() => {
@@ -166,8 +170,9 @@ function UploadPage() {
           <CheckCircle className="w-16 h-16 text-[#c5f000] mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-noir-100">Pending Review</h1>
           <p className="mt-3 text-noir-400 max-w-md mx-auto">
-            Your blob has been received and is awaiting moderation. It will appear
-            in the gallery once approved by an admin.
+            {moderationUnavailable
+              ? 'Your upload has been queued for review. Our content moderation service is temporarily unavailable — an admin will review it shortly.'
+              : 'Your blob has been received and is awaiting moderation. It will appear in the gallery once approved by an admin.'}
           </p>
           <Link
             to="/gallery"

@@ -13,8 +13,8 @@ export function EnsureProfile() {
   useEffect(() => {
     if (isLoaded && isSignedIn && !called.current) {
       called.current = true
-      ensureProfile().catch(() => {
-        // Silently fail — profile will be created on next attempt
+      ensureProfile().catch((err) => {
+        console.error('ensureProfile failed:', err)
       })
     }
   }, [isLoaded, isSignedIn])

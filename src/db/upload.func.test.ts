@@ -302,6 +302,24 @@ describe('checkUploadLimit', () => {
       'Profile not found',
     )
   })
+
+  it('allows admins to bypass the daily limit', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 5,
+        lastUploadDate: '2024-12-02',
+        approved: 1,
+        banned: 0,
+        isAdmin: 1,
+        createdAt: new Date(),
+      },
+    ])
+
+    await expect(
+      checkUploadLimit('user_1', '2024-12-02'),
+    ).resolves.toEqual({ currentCount: 5, lastDate: '2024-12-02' })
+  })
 })
 
 // ── Tests: todayDateString ───────────────────────────────────────────────────

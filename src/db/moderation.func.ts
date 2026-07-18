@@ -4,6 +4,7 @@ export interface ModerationResult {
   flagged: boolean
   scores: Record<string, number>
   raw: Record<string, unknown>
+  moderationUnavailable: boolean
 }
 
 // ── Thresholds ──────────────────────────────────────────────────────────────
@@ -54,16 +55,26 @@ const THRESHOLDS: Record<string, number> = {
  * Send an image buffer to SightEngine for moderation.
  * Returns whether the image was flagged and the full scores.
  *
- * If the SightEngine API call fails, returns { flagged: false } so the
- * upload is not blocked (bias toward availability).
+ * When SightEngine is unreachable or returns an error, the image is
+ * flagged and `moderationUnavailable` is set to true so the upload
+ * is quarantined for admin review rather than silently published.
+ *
+ * Set `MODERATION_FAIL_OPEN=true` to restore the old fail-open
+ * behavior during extended SightEngine outages.
  */
 export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
   const apiUser = process.env.SIGHTENGINE_API_USER
   const apiSecret = process.env.SIGHTENGINE_API_SECRET
+  const failOpen = process.env.MODERATION_FAIL_OPEN === 'true'
 
   if (!apiUser || !apiSecret) {
-    console.warn('SightEngine credentials not configured — skipping moderation')
-    return { flagged: false, scores: {}, raw: {} }
+    console.warn('SightEngine credentials not configured — quarantining upload')
+    return {
+      flagged: failOpen ? false : true,
+      scores: failOpen ? {} : { moderationUnavailable: 1 },
+      raw: {},
+      moderationUnavailable: !failOpen,
+    }
   }
 
   try {
@@ -83,7 +94,12 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
     // Check for API errors
     if (result.status === 'failure') {
       console.error('SightEngine API error:', result.error)
-      return { flagged: false, scores: {}, raw: result }
+      return {
+        flagged: failOpen ? false : true,
+        scores: failOpen ? {} : { moderationUnavailable: 1 },
+        raw: result,
+        moderationUnavailable: !failOpen,
+      }
     }
 
     // Extract scores from the result.
@@ -103,9 +119,14 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
       }
     }
 
-    return { flagged, scores, raw: result }
+    return { flagged, scores, raw: result, moderationUnavailable: false }
   } catch (err) {
     console.error('SightEngine moderation failed:', err)
-    return { flagged: false, scores: {}, raw: {} }
+    return {
+      flagged: failOpen ? false : true,
+      scores: failOpen ? {} : { moderationUnavailable: 1 },
+      raw: {},
+      moderationUnavailable: !failOpen,
+    }
   }
 }
