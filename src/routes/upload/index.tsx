@@ -358,7 +358,7 @@ function UploadPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-3.5 bg-doom-500 text-white font-bold rounded-lg hover:bg-doom-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2"
+          className="w-full py-3.5 bg-[#ff5a0a] text-[#14100e] font-bold rounded-lg hover:bg-[#ff7a1a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>

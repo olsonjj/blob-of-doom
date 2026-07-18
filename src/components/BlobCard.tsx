@@ -42,7 +42,7 @@ export function BlobCard({ blob, onDelete }: { blob: GalleryBlob; onDelete?: () 
   })
 
   return (
-    <article className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors group">
+    <article className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors group flex flex-col">
       {/* Image — links to detail page */}
       <Link to="/gallery/$blobId" params={{ blobId: blob.id.toString() }} className="block relative">
         <div className="aspect-[4/3] overflow-hidden bg-noir-800">
@@ -67,21 +67,12 @@ export function BlobCard({ blob, onDelete }: { blob: GalleryBlob; onDelete?: () 
       </Link>
 
       {/* Content */}
-      <div className="p-5 space-y-3">
+      <div className="p-4 flex flex-col flex-1 space-y-2.5 text-left">
         <Link to="/gallery/$blobId" params={{ blobId: blob.id.toString() }}>
           <h3 className="text-lg font-bold text-noir-100 leading-snug line-clamp-2 hover:text-doom-400 transition-colors">
             {blob.title}
           </h3>
         </Link>
-
-        {/* Doom Scale — read-only average */}
-        <HexagonRating rating={blob.averageRating} size={18} />
-
-        {/* Meta row */}
-        <div className="flex items-center justify-between text-xs text-noir-400 pt-1 border-t border-noir-800">
-          <span>{blob.filamentType}</span>
-          <span>{formattedDate}</span>
-        </div>
 
         {/* Description (truncated) */}
         {blob.description && (
@@ -89,6 +80,14 @@ export function BlobCard({ blob, onDelete }: { blob: GalleryBlob; onDelete?: () 
             {blob.description}
           </p>
         )}
+
+        {/* Bottom row: rating + date — pushed to bottom */}
+        <div className="flex items-center justify-between pt-2 border-t border-noir-800 mt-auto">
+          <HexagonRating rating={blob.averageRating} size={16} />
+          <div className="flex items-center gap-3 text-xs text-noir-400">
+            <span>{formattedDate}</span>
+          </div>
+        </div>
       </div>
     </article>
   )

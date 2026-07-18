@@ -84,7 +84,7 @@ export function HexagonRating({
           />
         )
       })}
-      <span className="ml-1.5 text-xs text-noir-400 tabular-nums">
+      <span className="ml-1.5 text-xs text-[#c5f000]/60 tabular-nums">
         {rating.toFixed(1)}
       </span>
 
@@ -152,22 +152,22 @@ function Hexagon({
 
   // Color logic:
   // - User's own rating: doom-500 (brighter)
-  // - Highlighted (hover): doom-400
-  // - Filled (average): doom-400
+  // - Highlighted (hover): #c5f000
+  // - Filled (average): #c5f000
   // - Dimmed (beyond hover): noir-700
   // - Empty: noir-600 outline
   let fillColor: string
   let strokeColor: string
 
   if (isUserRating) {
-    fillColor = 'text-doom-500'
-    strokeColor = 'text-doom-500'
+    fillColor = 'text-[#d4ff1a]'
+    strokeColor = 'text-[#d4ff1a]'
   } else if (highlighted) {
-    fillColor = 'text-doom-400'
-    strokeColor = 'text-doom-400'
+    fillColor = 'text-[#c5f000]'
+    strokeColor = 'text-[#c5f000]'
   } else if (filled) {
-    fillColor = 'text-doom-400'
-    strokeColor = 'text-doom-400'
+    fillColor = 'text-[#c5f000]'
+    strokeColor = 'text-[#c5f000]'
   } else if (dimmed) {
     fillColor = 'text-noir-700'
     strokeColor = 'text-noir-700'
@@ -217,7 +217,7 @@ function Hexagon({
           width={viewBoxW * partial}
           height={viewBoxH}
           fill="currentColor"
-          className="text-doom-400"
+          className="text-[#c5f000]"
           clipPath={`url(#${clipId})`}
         />
       )}

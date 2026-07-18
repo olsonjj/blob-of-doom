@@ -145,6 +145,16 @@ function BlobDetailPage() {
             {blob.title}
           </h1>
 
+          {/* Description */}
+          {blob.description && (
+            <div>
+              <h2 className="text-sm font-medium text-noir-400 uppercase tracking-wider mb-2">
+                Description
+              </h2>
+              <p className="text-noir-200 leading-relaxed">{blob.description}</p>
+            </div>
+          )}
+
           {/* Doom Scale — interactive for signed-in users */}
           <div className="bg-noir-900 border border-noir-700 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
@@ -162,16 +172,6 @@ function BlobDetailPage() {
               isAuthenticated={isSignedIn ?? false}
             />
           </div>
-
-          {/* Description */}
-          {blob.description && (
-            <div>
-              <h2 className="text-sm font-medium text-noir-400 uppercase tracking-wider mb-2">
-                Description
-              </h2>
-              <p className="text-noir-200 leading-relaxed">{blob.description}</p>
-            </div>
-          )}
 
           {/* Metadata grid */}
           <div className="grid grid-cols-2 gap-4">
