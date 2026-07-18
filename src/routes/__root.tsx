@@ -2,8 +2,9 @@ import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@cl
 import { HeadContent, Scripts, createRootRoute, Link } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { Skull } from 'lucide-react'
+import { Skull, Shield } from 'lucide-react'
 import { EnsureProfile } from '../components/EnsureProfile'
+import { AdminNavLink } from '../components/AdminNavLink'
 
 import appCss from '../styles.css?url'
 
@@ -74,6 +75,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                   <Link to="/upload" className="hover:text-noir-100 transition-colors">
                     Upload
                   </Link>
+                  <AdminNavLink />
                   <UserButton
                     appearance={{
                       elements: {

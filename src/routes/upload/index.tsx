@@ -1,16 +1,14 @@
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, ImageUp, AlertTriangle, CheckCircle } from 'lucide-react'
 import { uploadBlob, type UploadError } from '../../db/upload.func'
+import { requireAuth } from '../../db/auth-guards.func'
 
 export const Route = createFileRoute('/upload/')({
-  beforeLoad: async () => {
-    const { auth } = await import('@clerk/tanstack-react-start/server')
-    const { userId } = await auth()
-    if (!userId) {
-      throw redirect({ to: '/sign-in/$' })
-    }
-  },
+  // `requireAuth` is a createServerFn — RPC'd to the server on SPA nav
+  // so `auth()` runs where `getGlobalStartContext()` is populated.
+  // Inlining `auth()` here would throw on client-side navigation.
+  beforeLoad: async () => await requireAuth(),
   component: UploadPage,
 })
 

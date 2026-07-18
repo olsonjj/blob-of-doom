@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { db } from './index'
 import { blobs, profiles } from './schema'
 import { eq } from 'drizzle-orm'
+import { checkNotBanned } from './admin.func'
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -161,6 +162,9 @@ export const uploadBlob = createServerFn({ method: 'POST' })
     const { auth } = await import('@clerk/tanstack-react-start/server')
     const { userId } = await auth()
     if (!userId) throw new Error('Not authenticated')
+
+    // Banned check
+    await checkNotBanned(userId)
 
     // Rate limit
     const today = todayDateString()

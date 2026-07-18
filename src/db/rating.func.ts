@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { db } from './index'
 import { ratings } from './schema'
 import { eq, and, sql } from 'drizzle-orm'
+import { checkNotBanned } from './admin.func'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,9 @@ export const submitRating = createServerFn({ method: 'POST' })
     const { auth } = await import('@clerk/tanstack-react-start/server')
     const { userId } = await auth()
     if (!userId) throw new Error('Not authenticated')
+
+    // Banned check
+    await checkNotBanned(userId)
 
     // Upsert the rating
     await upsertRating(data.blobId, userId, data.score)
