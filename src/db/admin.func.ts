@@ -20,6 +20,21 @@ export interface StorageStats {
   capacityBytes: number
 }
 
+export interface FlaggedBlob {
+  id: number
+  title: string
+  description: string | null
+  dateOccurred: string
+  filamentType: string
+  machineUsed: string
+  imageThumbnailUrl: string
+  uploaderProfileId: string
+  uploaderName: string
+  uploaderAvatarUrl: string
+  moderationScores: Record<string, number> | null
+  createdAt: Date
+}
+
 // ── Internal helpers (all heavy imports are dynamic) ────────────────────────
 
 async function getDb() {
@@ -244,3 +259,107 @@ export const getStorageStats = createServerFn({ method: 'GET' }).handler(async (
   await requireAdmin()
   return queryStorageStats()
 })
+
+// ── Flagged blob helpers (extracted for testability) ────────────────────────
+
+export async function queryFlaggedBlobs(): Promise<FlaggedBlob[]> {
+  const [db, { blobs, profiles }, eq] = await Promise.all([
+    getDb(),
+    getSchema(),
+    getDrizzleEq(),
+  ])
+  const { and, desc } = await import('drizzle-orm')
+
+  const rows = await db
+    .select({
+      id: blobs.id,
+      title: blobs.title,
+      description: blobs.description,
+      dateOccurred: blobs.dateOccurred,
+      filamentType: blobs.filamentType,
+      machineUsed: blobs.machineUsed,
+      imageThumbnailUrl: blobs.imageThumbnailUrl,
+      uploaderProfileId: blobs.uploaderProfileId,
+      moderationScores: blobs.moderationScores,
+      createdAt: blobs.createdAt,
+      clerkUserId: profiles.clerkUserId,
+    })
+    .from(blobs)
+    .innerJoin(profiles, eq(blobs.uploaderProfileId, profiles.clerkUserId))
+    .where(and(eq(blobs.flagged, 1), eq(blobs.deleted, 0)))
+    .orderBy(desc(blobs.createdAt))
+
+  if (rows.length === 0) return []
+
+  // Enrich with Clerk user data
+  const { clerkClient } = await import('@clerk/tanstack-react-start/server')
+  const client = clerkClient()
+  const clerkUsers = await client.users.getUserList({
+    userId: rows.map((r) => r.clerkUserId),
+    limit: rows.length,
+  })
+  const clerkMap = new Map(clerkUsers.data.map((u) => [u.id, u]))
+
+  return rows.map((r) => {
+    const cu = clerkMap.get(r.clerkUserId)
+    return {
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      dateOccurred: r.dateOccurred,
+      filamentType: r.filamentType,
+      machineUsed: r.machineUsed,
+      imageThumbnailUrl: r.imageThumbnailUrl,
+      uploaderProfileId: r.uploaderProfileId,
+      uploaderName: cu
+        ? `${cu.firstName ?? ''} ${cu.lastName ?? ''}`.trim() || cu.username || 'Unknown'
+        : 'Unknown',
+      uploaderAvatarUrl: cu?.imageUrl ?? '',
+      moderationScores: r.moderationScores as Record<string, number> | null,
+      createdAt: r.createdAt,
+    }
+  })
+}
+
+export async function approveFlaggedBlobById(blobId: number): Promise<void> {
+  const [db, { blobs }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()])
+  const [updated] = await db
+    .update(blobs)
+    .set({ flagged: 0, moderationScores: null })
+    .where(eq(blobs.id, blobId))
+    .returning({ id: blobs.id })
+  if (!updated) throw new Error('Blob not found')
+}
+
+// ── Flagged blob server functions ───────────────────────────────────────────
+
+export const getFlaggedBlobs = createServerFn({ method: 'GET' }).handler(async () => {
+  await requireAdmin()
+  return queryFlaggedBlobs()
+})
+
+export const approveFlaggedBlob = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => {
+    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).blobId !== 'number') {
+      throw new Error('blobId is required')
+    }
+    return d as { blobId: number }
+  })
+  .handler(async ({ data }) => {
+    await requireAdmin()
+    await approveFlaggedBlobById(data.blobId)
+    return { success: true }
+  })
+
+export const rejectFlaggedBlob = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => {
+    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).blobId !== 'number') {
+      throw new Error('blobId is required')
+    }
+    return d as { blobId: number }
+  })
+  .handler(async ({ data }) => {
+    await requireAdmin()
+    await removeBlob(data.blobId)
+    return { success: true }
+  })

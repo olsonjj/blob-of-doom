@@ -174,6 +174,10 @@ export const uploadBlob = createServerFn({ method: 'POST' })
     const buffer = Buffer.from(await data.image.arrayBuffer())
     const variants = await processImageVariants(buffer)
 
+    // Content moderation — run after processing, before upload
+    const { moderateImage } = await import('./moderation.func')
+    const moderation = await moderateImage(buffer)
+
     // Upload to Vercel Blob (dynamic import — server-only package)
     const { put } = await import('@vercel/blob')
     const token = process.env.BLOB_READ_WRITE_TOKEN
@@ -213,25 +217,29 @@ export const uploadBlob = createServerFn({ method: 'POST' })
         imageMediumUrl: mediumResult.url,
         imageFullUrl: fullResult.url,
         uploaderProfileId: userId,
+        flagged: moderation.flagged ? 1 : 0,
+        moderationScores: moderation.scores,
       })
       .returning()
 
-    // Update profile upload count
-    const [profile] = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.clerkUserId, userId))
-      .limit(1)
+    // Update profile upload count — flagged uploads don't count toward limit
+    if (!moderation.flagged) {
+      const [profile] = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.clerkUserId, userId))
+        .limit(1)
 
-    const newCount =
-      profile && profile.lastUploadDate === today
-        ? profile.uploadCountToday + 1
-        : 1
+      const newCount =
+        profile && profile.lastUploadDate === today
+          ? profile.uploadCountToday + 1
+          : 1
 
-    await db
-      .update(profiles)
-      .set({ uploadCountToday: newCount, lastUploadDate: today })
-      .where(eq(profiles.clerkUserId, userId))
+      await db
+        .update(profiles)
+        .set({ uploadCountToday: newCount, lastUploadDate: today })
+        .where(eq(profiles.clerkUserId, userId))
+    }
 
-    return newBlob
+    return newBlob as Omit<typeof newBlob, 'moderationScores'> & { moderationScores: Record<string, number> | null }
   })

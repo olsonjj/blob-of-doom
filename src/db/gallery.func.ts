@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from './index'
 import { blobs, ratings } from './schema'
-import { eq, sql, desc, asc } from 'drizzle-orm'
+import { eq, and, sql, desc, asc } from 'drizzle-orm'
 
 export type SortField = 'date' | 'doom'
 export type SortOrder = 'asc' | 'desc'
@@ -20,6 +20,8 @@ export interface GalleryBlob {
   createdAt: Date
   averageRating: number
   ratingCount: number
+  flagged: number
+  moderationScores: Record<string, number> | null
 }
 
 export interface GalleryQueryParams {
@@ -50,10 +52,12 @@ export async function queryGallery(params: GalleryQueryParams): Promise<GalleryB
       createdAt: blobs.createdAt,
       averageRating: sql<number>`COALESCE(AVG(${ratings.score}::float), 0)`,
       ratingCount: sql<number>`COUNT(${ratings.id})::int`,
+      flagged: blobs.flagged,
+      moderationScores: blobs.moderationScores,
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
-    .where(eq(blobs.deleted, 0))
+    .where(and(eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .groupBy(blobs.id)
     .orderBy(
       sort === 'doom'

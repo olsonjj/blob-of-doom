@@ -11,6 +11,8 @@ import {
   Trash2,
   AlertTriangle,
   RefreshCw,
+  Flag,
+  Eye,
 } from 'lucide-react'
 import {
   getUsers,
@@ -20,18 +22,17 @@ import {
   unbanUser,
   deleteBlob,
   getStorageStats,
+  getFlaggedBlobs,
+  approveFlaggedBlob,
+  rejectFlaggedBlob,
   type AdminUser,
   type StorageStats,
+  type FlaggedBlob,
 } from '../../db/admin.func'
 import { fetchGallery, type GalleryBlob } from '../../db/gallery.func'
 import { requireAdmin } from '../../db/auth-guards.func'
 
 export const Route = createFileRoute('/admin/')({
-  // `requireAdmin` is a createServerFn — TanStack Start RPCs it to the
-  // server on client-side navigation, so `auth()` runs where
-  // `getGlobalStartContext()` is actually populated (by clerkMiddleware).
-  // Calling `auth()` inline here would throw on SPA nav because
-  // `getGlobalStartContext()` returns undefined on the client.
   beforeLoad: async () => await requireAdmin(),
   component: AdminDashboard,
 })
@@ -44,6 +45,10 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   const size = bytes / Math.pow(1024, i)
   return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`
 }
 
 // ── Confirmation Modal ──────────────────────────────────────────────────────
@@ -309,6 +314,43 @@ function UserRow({
 
 // ── Blob Management Row ─────────────────────────────────────────────────────
 
+const MODERATION_CATEGORIES: { key: string; label: string }[] = [
+  { key: 'nudity', label: 'Nudity' },
+  { key: 'weapons', label: 'Weapons' },
+  { key: 'alcohol', label: 'Alcohol' },
+  { key: 'drugs', label: 'Drugs' },
+]
+
+function ModerationBadges({ scores }: { scores: Record<string, number> | null }) {
+  if (!scores) return null
+  const entries = MODERATION_CATEGORIES.filter(({ key }) => typeof scores[key] === 'number')
+  if (entries.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {entries.map(({ key, label }) => {
+        const score = scores[key]
+        const isHigh = score >= 0.7
+        const isMedium = score >= 0.4 && score < 0.7
+        return (
+          <span
+            key={key}
+            className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+              isHigh
+                ? 'bg-doom-500/10 text-doom-400'
+                : isMedium
+                  ? 'bg-yellow-500/10 text-yellow-400'
+                  : 'bg-noir-800 text-noir-500'
+            }`}
+          >
+            {label} {(score * 100).toFixed(0)}%
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 function BlobRow({
   blob,
   onDelete,
@@ -332,6 +374,7 @@ function BlobRow({
             <p className="text-xs text-noir-400">
               {new Date(blob.createdAt).toLocaleDateString()}
             </p>
+            <ModerationBadges scores={blob.moderationScores} />
           </div>
         </div>
       </td>
@@ -352,9 +395,142 @@ function BlobRow({
   )
 }
 
+// ── Flagged Blob Card ───────────────────────────────────────────────────────
+
+function FlaggedBlobCard({
+  blob,
+  onApprove,
+  onReject,
+}: {
+  blob: FlaggedBlob
+  onApprove: (blobId: number) => void
+  onReject: (blobId: number) => void
+}) {
+  const scores = blob.moderationScores ?? {}
+
+  return (
+    <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors">
+      <div className="flex flex-col sm:flex-row">
+        {/* Thumbnail */}
+        <div className="sm:w-48 shrink-0">
+          <img
+            src={blob.imageThumbnailUrl}
+            alt={blob.title}
+            className="w-full sm:w-48 h-36 sm:h-full object-cover bg-noir-800"
+          />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-noir-100">
+                  {blob.title}
+                </h3>
+                {blob.description && (
+                  <p className="text-xs text-noir-400 mt-0.5 line-clamp-2">
+                    {blob.description}
+                  </p>
+                )}
+              </div>
+              {/* Uploader info */}
+              <div className="flex items-center gap-2 shrink-0">
+                {blob.uploaderAvatarUrl ? (
+                  <img
+                    src={blob.uploaderAvatarUrl}
+                    alt=""
+                    className="w-6 h-6 rounded-full bg-noir-700"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-noir-700 flex items-center justify-center">
+                    <Users className="w-3 h-3 text-noir-400" />
+                  </div>
+                )}
+                <span className="text-xs text-noir-400">{blob.uploaderName}</span>
+              </div>
+            </div>
+
+            {/* Meta row */}
+            <div className="flex items-center gap-4 mt-2 text-xs text-noir-500">
+              <span>{new Date(blob.createdAt).toLocaleDateString()}</span>
+              <span>{blob.filamentType}</span>
+              <span>{blob.machineUsed}</span>
+            </div>
+
+            {/* Moderation scores */}
+            <div className="mt-3">
+              <p className="text-xs font-medium text-noir-400 mb-1.5">
+                Moderation Scores
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {MODERATION_CATEGORIES.map(({ key, label }) => {
+                  const score = scores[key]
+                  const hasScore = typeof score === 'number'
+                  const isHigh = hasScore && score >= 0.7
+                  const isMedium = hasScore && score >= 0.4 && score < 0.7
+
+                  return (
+                    <div
+                      key={key}
+                      className={`px-2 py-1 rounded-md text-xs font-medium border ${
+                        isHigh
+                          ? 'bg-doom-500/10 text-doom-400 border-doom-500/30'
+                          : isMedium
+                            ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                            : 'bg-noir-800 text-noir-400 border-noir-700'
+                      }`}
+                    >
+                      {label}{' '}
+                      <span className="tabular-nums ml-0.5">
+                        {hasScore ? formatPercent(score) : '—'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-noir-800">
+            <button
+              onClick={() => onApprove(blob.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors cursor-pointer"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              Approve
+            </button>
+            <button
+              onClick={() => onReject(blob.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-doom-500 hover:bg-doom-400 rounded-lg transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Reject
+            </button>
+            <a
+              href={`/blobs/${blob.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-noir-400 hover:text-noir-200 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer ml-auto"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 
+type Tab = 'users' | 'blobs' | 'flagged'
+
 function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState<Tab>('users')
+
   const [users, setUsers] = useState<AdminUser[]>([])
   const [usersLoading, setUsersLoading] = useState(true)
   const [usersError, setUsersError] = useState<string | null>(null)
@@ -364,6 +540,9 @@ function AdminDashboard() {
 
   const [blobs, setBlobs] = useState<GalleryBlob[]>([])
   const [blobsLoading, setBlobsLoading] = useState(true)
+
+  const [flaggedBlobs, setFlaggedBlobs] = useState<FlaggedBlob[]>([])
+  const [flaggedLoading, setFlaggedLoading] = useState(false)
 
   // Confirmation modal state
   const [confirm, setConfirm] = useState<{
@@ -415,11 +594,24 @@ function AdminDashboard() {
     }
   }, [])
 
+  const loadFlagged = useCallback(async () => {
+    setFlaggedLoading(true)
+    try {
+      const data = await getFlaggedBlobs()
+      setFlaggedBlobs(data)
+    } catch {
+      // Silently fail
+    } finally {
+      setFlaggedLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     loadUsers()
     loadStorage()
     loadBlobs()
-  }, [loadUsers, loadStorage, loadBlobs])
+    loadFlagged() // Preload count for the badge
+  }, [loadUsers, loadStorage, loadBlobs, loadFlagged])
 
   // ── Actions ────────────────────────────────────────────────────────────
 
@@ -476,6 +668,35 @@ function AdminDashboard() {
     })
   }
 
+  const handleApproveFlagged = (blobId: number) => {
+    const blob = flaggedBlobs.find((b) => b.id === blobId)
+    setConfirm({
+      title: 'Approve Blob',
+      message: `Approve "${blob?.title ?? 'this blob'}"? It will become publicly visible in the gallery.`,
+      confirmLabel: 'Approve',
+      variant: 'warning',
+      action: async () => {
+        await approveFlaggedBlob({ data: { blobId } })
+        await loadFlagged()
+      },
+    })
+  }
+
+  const handleRejectFlagged = (blobId: number) => {
+    const blob = flaggedBlobs.find((b) => b.id === blobId)
+    setConfirm({
+      title: 'Reject Blob',
+      message: `Reject and permanently delete "${blob?.title ?? 'this blob'}"? This will remove the blob record and all image variants from storage. This action cannot be undone.`,
+      confirmLabel: 'Reject & Delete',
+      variant: 'danger',
+      action: async () => {
+        await rejectFlaggedBlob({ data: { blobId } })
+        await loadFlagged()
+        await loadStorage()
+      },
+    })
+  }
+
   const executeConfirm = async () => {
     if (!confirm) return
     setActionError(null)
@@ -508,6 +729,7 @@ function AdminDashboard() {
             loadUsers()
             loadStorage()
             loadBlobs()
+            if (activeTab === 'flagged') loadFlagged()
           }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
         >
@@ -524,139 +746,214 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Storage Stats ───────────────────────────────────────────────── */}
-      <section className="mb-12">
-        <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
-          <HardDrive className="w-5 h-5 text-noir-400" />
-          Storage
-        </h2>
-        <StorageCards stats={storageStats} loading={storageLoading} />
-      </section>
+      {/* ── Tab Navigation ─────────────────────────────────────────────── */}
+      <div className="flex gap-1 mb-8 bg-noir-900 border border-noir-700 rounded-lg p-1 w-fit">
+        {([
+          ['users', 'Users', Users],
+          ['blobs', 'Blobs', Image],
+          ['flagged', 'Flagged', Flag],
+        ] as const).map(([tab, label, Icon]) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+              activeTab === tab
+                ? 'bg-doom-500/20 text-doom-300'
+                : 'text-noir-400 hover:text-noir-200'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+            {tab === 'flagged' && flaggedBlobs.length > 0 && (
+              <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-doom-500 text-white rounded-full">
+                {flaggedBlobs.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Storage Stats (Users tab only) ──────────────────────────────── */}
+      {activeTab === 'users' && (
+        <section className="mb-12">
+          <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
+            <HardDrive className="w-5 h-5 text-noir-400" />
+            Storage
+          </h2>
+          <StorageCards stats={storageStats} loading={storageLoading} />
+        </section>
+      )}
 
       {/* ── User Management ─────────────────────────────────────────────── */}
-      <section className="mb-12">
-        <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-noir-400" />
-          Users
-          {!usersLoading && (
-            <span className="text-sm font-normal text-noir-500 ml-1">
-              ({users.length} total)
-            </span>
-          )}
-        </h2>
+      {activeTab === 'users' && (
+        <section className="mb-12">
+          <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-noir-400" />
+            Users
+            {!usersLoading && (
+              <span className="text-sm font-normal text-noir-500 ml-1">
+                ({users.length} total)
+              </span>
+            )}
+          </h2>
 
-        {usersError ? (
-          <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4 text-sm text-doom-300">
-            {usersError}
-          </div>
-        ) : usersLoading ? (
-          <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
-            <div className="p-4 animate-pulse space-y-3">
-              {Array.from({ length: 3 }, (_, i) => (
-                <div key={i} className="h-10 bg-noir-800 rounded" />
-              ))}
+          {usersError ? (
+            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4 text-sm text-doom-300">
+              {usersError}
             </div>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="bg-noir-900 border border-noir-700 rounded-xl p-8 text-center">
-            <Users className="w-10 h-10 text-noir-600 mx-auto mb-3" />
-            <p className="text-noir-400">No users found.</p>
-          </div>
-        ) : (
-          <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-noir-700 text-left">
-                    <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-center">
-                      Uploads Today
-                    </th>
-                    <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-right">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <UserRow
-                      key={user.clerkUserId}
-                      user={user}
-                      onToggleApproved={handleToggleApproved}
-                      onToggleBanned={handleToggleBanned}
-                    />
-                  ))}
-                </tbody>
-              </table>
+          ) : usersLoading ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+              <div className="p-4 animate-pulse space-y-3">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div key={i} className="h-10 bg-noir-800 rounded" />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+          ) : users.length === 0 ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl p-8 text-center">
+              <Users className="w-10 h-10 text-noir-600 mx-auto mb-3" />
+              <p className="text-noir-400">No users found.</p>
+            </div>
+          ) : (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-noir-700 text-left">
+                      <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-center">
+                        Uploads Today
+                      </th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-right">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <UserRow
+                        key={user.clerkUserId}
+                        user={user}
+                        onToggleApproved={handleToggleApproved}
+                        onToggleBanned={handleToggleBanned}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ── Blob Management ──────────────────────────────────────────────── */}
-      <section>
-        <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
-          <Image className="w-5 h-5 text-noir-400" />
-          Blobs
-          {!blobsLoading && (
-            <span className="text-sm font-normal text-noir-500 ml-1">
-              ({blobs.length} total)
-            </span>
-          )}
-        </h2>
+      {activeTab === 'blobs' && (
+        <section>
+          <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
+            <Image className="w-5 h-5 text-noir-400" />
+            Blobs
+            {!blobsLoading && (
+              <span className="text-sm font-normal text-noir-500 ml-1">
+                ({blobs.length} total)
+              </span>
+            )}
+          </h2>
 
-        {blobsLoading ? (
-          <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
-            <div className="p-4 animate-pulse space-y-3">
-              {Array.from({ length: 3 }, (_, i) => (
-                <div key={i} className="h-12 bg-noir-800 rounded" />
+          {blobsLoading ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+              <div className="p-4 animate-pulse space-y-3">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div key={i} className="h-12 bg-noir-800 rounded" />
+                ))}
+              </div>
+            </div>
+          ) : blobs.length === 0 ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl p-8 text-center">
+              <Image className="w-10 h-10 text-noir-600 mx-auto mb-3" />
+              <p className="text-noir-400">No blobs in the gallery.</p>
+            </div>
+          ) : (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-noir-700 text-left">
+                      <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">
+                        Blob
+                      </th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">
+                        Filament
+                      </th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-center">
+                        Doom Scale
+                      </th>
+                      <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-right">
+                        Delete
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {blobs.map((blob) => (
+                      <BlobRow
+                        key={blob.id}
+                        blob={blob}
+                        onDelete={handleDeleteBlob}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Flagged Review Queue ──────────────────────────────────────────── */}
+      {activeTab === 'flagged' && (
+        <section>
+          <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
+            <Flag className="w-5 h-5 text-doom-400" />
+            Flagged for Review
+            {!flaggedLoading && (
+              <span className="text-sm font-normal text-noir-500 ml-1">
+                ({flaggedBlobs.length} pending)
+              </span>
+            )}
+          </h2>
+
+          {flaggedLoading ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+              <div className="p-4 animate-pulse space-y-3">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div key={i} className="h-20 bg-noir-800 rounded" />
+                ))}
+              </div>
+            </div>
+          ) : flaggedBlobs.length === 0 ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl p-8 text-center">
+              <CheckCircle className="w-10 h-10 text-green-500/50 mx-auto mb-3" />
+              <p className="text-noir-400">No flagged blobs awaiting review.</p>
+              <p className="text-sm text-noir-500 mt-1">All clear!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {flaggedBlobs.map((blob) => (
+                <FlaggedBlobCard
+                  key={blob.id}
+                  blob={blob}
+                  onApprove={handleApproveFlagged}
+                  onReject={handleRejectFlagged}
+                />
               ))}
             </div>
-          </div>
-        ) : blobs.length === 0 ? (
-          <div className="bg-noir-900 border border-noir-700 rounded-xl p-8 text-center">
-            <Image className="w-10 h-10 text-noir-600 mx-auto mb-3" />
-            <p className="text-noir-400">No blobs in the gallery.</p>
-          </div>
-        ) : (
-          <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-noir-700 text-left">
-                    <th className="py-3 px-4 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                      Blob
-                    </th>
-                    <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider">
-                      Filament
-                    </th>
-                    <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-center">
-                      Doom Scale
-                    </th>
-                    <th className="py-3 px-2 text-xs font-medium text-noir-400 uppercase tracking-wider text-right">
-                      Delete
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {blobs.map((blob) => (
-                    <BlobRow
-                      key={blob.id}
-                      blob={blob}
-                      onDelete={handleDeleteBlob}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       {/* ── Confirmation Modal ──────────────────────────────────────────── */}
       <ConfirmModal

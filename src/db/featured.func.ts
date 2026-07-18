@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from './index'
 import { blobs, ratings } from './schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ export async function queryFeatured(): Promise<FeaturedBlob[]> {
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
-    .where(eq(blobs.deleted, 0))
+    .where(and(eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .groupBy(blobs.id)
     .orderBy(sql`RANDOM()`)
     .limit(6)

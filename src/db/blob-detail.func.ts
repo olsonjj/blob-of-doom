@@ -54,7 +54,7 @@ export async function queryBlobDetail(
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))
-    .where(and(eq(blobs.id, blobId), eq(blobs.deleted, 0)))
+    .where(and(eq(blobs.id, blobId), eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .groupBy(blobs.id)
     .limit(1)
 

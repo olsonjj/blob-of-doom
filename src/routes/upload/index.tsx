@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, ImageUp, AlertTriangle, CheckCircle } from 'lucide-react'
 import { uploadBlob, type UploadError } from '../../db/upload.func'
@@ -33,6 +33,7 @@ function UploadPage() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [flagged, setFlagged] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -127,13 +128,17 @@ function UploadPage() {
       formData.set('machineUsed', machineUsed.trim())
       formData.set('image', imageFile!)
 
-      await uploadBlob({ data: formData })
+      const result = await uploadBlob({ data: formData })
 
       setSuccess(true)
-      // Redirect to gallery after a brief pause so the user sees the success state
-      setTimeout(() => {
-        router.navigate({ to: '/gallery' })
-      }, 1500)
+      if (result.flagged === 1) {
+        setFlagged(true)
+      } else {
+        // Redirect to gallery after a brief pause so the user sees the success state
+        setTimeout(() => {
+          router.navigate({ to: '/gallery' })
+        }, 1500)
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Upload failed'
       // Try to parse structured validation errors from the server
@@ -155,6 +160,25 @@ function UploadPage() {
   // ── Success state ──────────────────────────────────────────────────────
 
   if (success) {
+    if (flagged) {
+      return (
+        <div className="max-w-2xl mx-auto px-4 py-24 text-center">
+          <CheckCircle className="w-16 h-16 text-[#c5f000] mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-noir-100">Pending Review</h1>
+          <p className="mt-3 text-noir-400 max-w-md mx-auto">
+            Your blob has been received and is awaiting moderation. It will appear
+            in the gallery once approved by an admin.
+          </p>
+          <Link
+            to="/gallery"
+            className="inline-flex items-center gap-2 mt-6 text-[#c5f000] hover:text-[#d4ff1a] transition-colors"
+          >
+            Back to Gallery
+          </Link>
+        </div>
+      )
+    }
+
     return (
       <div className="max-w-2xl mx-auto px-4 py-24 text-center">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
