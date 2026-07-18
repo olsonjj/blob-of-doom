@@ -28,10 +28,10 @@ function Home() {
       <div className="relative overflow-hidden bg-noir-950 border-b border-[#1b2929]">
         {/* Background image - blurred and faded */}
         <div
-          className="absolute inset-0 scale-105 bg-cover bg-center blur-[6px] opacity-75"
+          className="absolute inset-0 scale-105 bg-cover bg-center blur-[1px] opacity-90"
           style={{ backgroundImage: `url(${heroBg})` }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,10,12,0.18),rgba(3,6,7,0.9)_74%),linear-gradient(90deg,rgba(0,0,0,0.76),rgba(0,0,0,0.26)_46%,rgba(0,0,0,0.82))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,10,12,0.10),rgba(3,6,7,0.55)_74%),linear-gradient(90deg,rgba(0,0,0,0.45),rgba(0,0,0,0.15)_46%,rgba(0,0,0,0.50))]" />
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/50 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-noir-950 to-transparent" />
 
