@@ -306,11 +306,20 @@ function BlobDetailPage() {
                 type="text"
                 value={editFilamentType}
                 onChange={(e) => setEditFilamentType(e.target.value)}
+                list="filament-suggestions"
                 maxLength={100}
                 className={`w-full px-4 py-3 bg-noir-900 border rounded-lg text-noir-100 placeholder:text-noir-500 focus:outline-none focus:ring-2 focus:ring-doom-500/50 transition-colors ${
                   editFieldError('filamentType') ? 'border-doom-500' : 'border-noir-700'
                 }`}
               />
+              <datalist id="filament-suggestions">
+                <option value="PLA" />
+                <option value="PETG" />
+                <option value="ABS" />
+                <option value="ASA" />
+                <option value="TPU" />
+                <option value="PCCF" />
+              </datalist>
               {editFieldError('filamentType') && (
                 <p className="mt-1.5 text-sm text-doom-400">{editFieldError('filamentType')}</p>
               )}
