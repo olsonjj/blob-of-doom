@@ -1,6 +1,7 @@
 # SEC-015 — Test coverage for untested DB modules
 
 **Priority:** 🔵 Defer | **Estimate:** 4h | **Files:** `src/db/__tests__/`
+**Wave:** 5
 
 ## Problem
 

@@ -1,6 +1,7 @@
 # SEC-011 — Structured error returns instead of JSON-in-message
 
 **Priority:** 🟡 Cleanup | **Estimate:** 1.5h | **Files:** `src/db/upload.func.ts`, `src/db/blob-edit.func.ts`, `src/routes/upload/index.tsx`, `src/routes/gallery/$blobId/index.tsx`
+**Wave:** 4
 
 ## Problem
 

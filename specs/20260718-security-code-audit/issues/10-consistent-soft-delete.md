@@ -1,6 +1,7 @@
 # SEC-010 — Consistent soft-delete for admin blob removal
 
 **Priority:** 🟡 Cleanup | **Estimate:** 30m | **Files:** `src/db/admin.func.ts`
+**Wave:** 3
 
 ## Problem
 

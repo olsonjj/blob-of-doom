@@ -1,6 +1,7 @@
 # SEC-005 — Moderation must fail closed (quarantine on error)
 
 **Priority:** 🟠 Fix Soon | **Estimate:** 2h | **Files:** `src/db/moderation.func.ts`, `src/routes/upload/index.tsx`
+**Wave:** 2
 
 ## Problem
 

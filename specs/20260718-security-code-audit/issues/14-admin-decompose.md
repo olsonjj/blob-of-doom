@@ -1,6 +1,7 @@
 # SEC-014 — Decompose admin/index.tsx (~700 lines)
 
 **Priority:** 🔵 Defer | **Estimate:** 3h | **Files:** `src/routes/admin/index.tsx`
+**Wave:** 5
 
 ## Problem
 

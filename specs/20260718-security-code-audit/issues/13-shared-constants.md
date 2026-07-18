@@ -1,6 +1,7 @@
 # SEC-013 — Extract shared validation constants
 
 **Priority:** 🟡 Cleanup | **Estimate:** 15m | **Files:** `src/db/upload.func.ts`, `src/routes/upload/index.tsx`, new file `src/shared/constants.ts`
+**Wave:** 4
 
 ## Problem
 

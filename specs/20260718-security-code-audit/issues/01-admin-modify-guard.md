@@ -1,6 +1,7 @@
 # SEC-001 — Prevent admins from modifying other admins
 
 **Priority:** 🔴 Fix Now | **Estimate:** 30m | **Files:** `src/db/admin.func.ts`
+**Wave:** 1
 
 ## Problem
 

@@ -1,6 +1,7 @@
 # SEC-002 — Fix static import of server-only auth in profile.func.ts
 
 **Priority:** 🔴 Fix Now | **Estimate:** 15m | **Files:** `src/db/profile.func.ts`
+**Wave:** 1
 
 ## Problem
 
