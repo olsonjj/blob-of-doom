@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a0a0c"/>
+      <stop offset="1" stop-color="#14100e"/>
+    </linearGradient>
+    <linearGradient id="molten" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb060"/>
+      <stop offset="0.45" stop-color="#ff5a0a"/>
+      <stop offset="1" stop-color="#c41e3a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.62" r="0.5">
+      <stop offset="0" stop-color="#ff5a0a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff5a0a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="nozzle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3936"/>
+      <stop offset="1" stop-color="#1b1a18"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded noir canvas -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bg)" stroke="#1b2929" stroke-width="3"/>
+
+  <!-- Subtle underglow -->
+  <ellipse cx="256" cy="330" rx="170" ry="120" fill="url(#glow)"/>
+
+  <!-- Printer nozzle -->
+  <g>
+    <rect x="226" y="74" width="60" height="86" rx="10" fill="url(#nozzle)" stroke="#4a4946" stroke-width="2"/>
+    <rect x="244" y="160" width="24" height="26" fill="#2b2a28"/>
+    <!-- heater block -->
+    <rect x="214" y="150" width="84" height="34" rx="6" fill="#5a4a3a" stroke="#7a6a4a" stroke-width="2"/>
+    <!-- hot tip -->
+    <rect x="248" y="184" width="16" height="14" fill="#ff7a1a"/>
+  </g>
+
+  <!-- Molten strand from nozzle -->
+  <path d="M256 198 C 250 230 262 250 256 280" stroke="url(#molten)" stroke-width="14" fill="none" stroke-linecap="round"/>
+
+  <!-- The pooling doom blob (asymmetric melted blob) -->
+  <path d="
+    M256 286
+    C 330 286 388 322 388 372
+    C 388 422 344 442 300 442
+    C 286 442 278 446 270 452
+    C 262 458 258 470 250 470
+    C 244 470 240 458 236 450
+    C 230 440 222 442 210 440
+    C 166 432 124 408 124 366
+    C 124 322 182 286 256 286 Z
+  " fill="url(#molten)" stroke="#7a2a0a" stroke-width="3"/>
+
+  <!-- Drip off the blob -->
+  <path d="M332 430 C 332 452 338 470 346 470 C 354 470 360 452 360 430 C 360 416 354 410 346 410 C 338 410 332 416 332 430 Z" fill="url(#molten)" stroke="#7a2a0a" stroke-width="2.5"/>
+
+  <!-- Specular highlight on the blob -->
+  <ellipse cx="210" cy="330" rx="42" ry="22" fill="#ffd9a8" opacity="0.42" transform="rotate(-28 210 330)"/>
+
+  <!-- Tiny spaghetti strand flair (chaos hint) -->
+  <path d="M256 198 C 220 230 300 250 270 285" stroke="url(#molten)" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.7"/>
+</svg>
