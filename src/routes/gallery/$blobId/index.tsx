@@ -37,20 +37,16 @@ function BlobDetailPage() {
 
   const isOwner = !!(userId && blob && blob.uploaderProfileId === userId);
 
+  const parsedId = parseInt(blobId, 10);
+  const isInvalidId = isNaN(parsedId);
+
   useEffect(() => {
-    const id = parseInt(blobId, 10);
-    if (isNaN(id)) {
-      setError('Invalid blob ID');
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    fetchBlobDetail({ data: id })
+    if (isInvalidId) return;
+    void fetchBlobDetail({ data: parsedId })
       .then(setBlob)
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load blob'))
       .finally(() => setLoading(false));
-  }, [blobId]);
+  }, [blobId, parsedId, isInvalidId]);
 
   const handleRate = useCallback(
     async (score: number) => {
@@ -122,7 +118,7 @@ function BlobDetailPage() {
     try {
       const result = await updateBlob({
         data: {
-          blobId: blob!.id,
+          blobId: blob?.id ?? 0,
           title: editTitle,
           description: editDescription || null,
           dateOccurred: editDateOccurred,
@@ -137,7 +133,7 @@ function BlobDetailPage() {
       }
 
       // Refresh the blob data
-      const fresh = await fetchBlobDetail({ data: blob!.id });
+      const fresh = await fetchBlobDetail({ data: blob?.id ?? 0 });
       setBlob(fresh);
       setEditing(false);
     } catch (err: unknown) {
@@ -160,6 +156,23 @@ function BlobDetailPage() {
       setShowDeleteConfirm(false);
     }
   };
+
+  // ── Invalid ID state ──────────────────────────────────────────────────────
+
+  if (isInvalidId) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-12 text-center">
+        <p className="text-noir-400 text-lg">Invalid blob ID</p>
+        <Link
+          to="/gallery"
+          className="inline-flex items-center gap-2 mt-6 text-doom-400 hover:text-doom-300 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Gallery
+        </Link>
+      </div>
+    );
+  }
 
   // ── Loading state ──────────────────────────────────────────────────────
 

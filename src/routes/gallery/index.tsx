@@ -14,7 +14,6 @@ function Gallery() {
   const [order, setOrder] = useState<SortOrder>('desc');
 
   useEffect(() => {
-    setLoading(true);
     void fetchGallery({ data: { sort, order } })
       .then(setBlobs)
       .finally(() => setLoading(false));

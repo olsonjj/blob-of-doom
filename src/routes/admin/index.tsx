@@ -499,9 +499,11 @@ function AdminDashboard() {
 
   // ── Data fetching ─────────────────────────────────────────────────────
 
-  const loadUsers = useCallback(async () => {
-    setUsersLoading(true);
-    setUsersError(null);
+  const loadUsers = useCallback(async (reset = false) => {
+    if (reset) {
+      setUsersLoading(true);
+      setUsersError(null);
+    }
     try {
       const data = await getUsers();
       setUsers(data);
@@ -512,9 +514,11 @@ function AdminDashboard() {
     }
   }, []);
 
-  const loadStorage = useCallback(async () => {
-    setStorageLoading(true);
-    setStorageError(null);
+  const loadStorage = useCallback(async (reset = false) => {
+    if (reset) {
+      setStorageLoading(true);
+      setStorageError(null);
+    }
     try {
       const data = await getStorageStats();
       setStorageStats(data);
@@ -526,9 +530,11 @@ function AdminDashboard() {
     }
   }, []);
 
-  const loadBlobs = useCallback(async () => {
-    setBlobsLoading(true);
-    setBlobsError(null);
+  const loadBlobs = useCallback(async (reset = false) => {
+    if (reset) {
+      setBlobsLoading(true);
+      setBlobsError(null);
+    }
     try {
       const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } });
       setBlobs(data);
@@ -540,9 +546,11 @@ function AdminDashboard() {
     }
   }, []);
 
-  const loadFlagged = useCallback(async () => {
-    setFlaggedLoading(true);
-    setFlaggedError(null);
+  const loadFlagged = useCallback(async (reset = false) => {
+    if (reset) {
+      setFlaggedLoading(true);
+      setFlaggedError(null);
+    }
     try {
       const data = await getFlaggedBlobs();
       setFlaggedBlobs(data);
@@ -555,11 +563,50 @@ function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    void loadUsers();
-    void loadStorage();
-    void loadBlobs();
-    void loadFlagged(); // Preload count for the badge
-  }, [loadUsers, loadStorage, loadBlobs, loadFlagged]);
+    void (async () => {
+      try {
+        const data = await getUsers();
+        setUsers(data);
+      } catch (err) {
+        setUsersError(err instanceof Error ? err.message : 'Failed to load users');
+      } finally {
+        setUsersLoading(false);
+      }
+    })();
+    void (async () => {
+      try {
+        const data = await getStorageStats();
+        setStorageStats(data);
+      } catch (err) {
+        console.error('loadStorage failed:', err);
+        setStorageError('Failed to load storage stats');
+      } finally {
+        setStorageLoading(false);
+      }
+    })();
+    void (async () => {
+      try {
+        const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } });
+        setBlobs(data);
+      } catch (err) {
+        console.error('loadBlobs failed:', err);
+        setBlobsError('Failed to load blobs');
+      } finally {
+        setBlobsLoading(false);
+      }
+    })();
+    void (async () => {
+      try {
+        const data = await getFlaggedBlobs();
+        setFlaggedBlobs(data);
+      } catch (err) {
+        console.error('loadFlagged failed:', err);
+        setFlaggedError('Failed to load flagged blobs');
+      } finally {
+        setFlaggedLoading(false);
+      }
+    })();
+  }, []);
 
   // ── Actions ────────────────────────────────────────────────────────────
 
@@ -672,10 +719,10 @@ function AdminDashboard() {
         </div>
         <button
           onClick={() => {
-            void loadUsers();
-            void loadStorage();
-            void loadBlobs();
-            if (activeTab === 'flagged') void loadFlagged();
+            void loadUsers(true);
+            void loadStorage(true);
+            void loadBlobs(true);
+            if (activeTab === 'flagged') void loadFlagged(true);
           }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
         >
@@ -730,7 +777,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{storageError}</p>
               <button
-                onClick={() => void loadStorage()}
+                onClick={() => void loadStorage(true)}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -814,7 +861,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{blobsError}</p>
               <button
-                onClick={() => void loadBlobs()}
+                onClick={() => void loadBlobs(true)}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -876,7 +923,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{flaggedError}</p>
               <button
-                onClick={() => void loadFlagged()}
+                onClick={() => void loadFlagged(true)}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry

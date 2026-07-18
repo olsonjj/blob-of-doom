@@ -1,7 +1,7 @@
 import { useAuth } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
 import { Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { checkAdminStatus } from '../db/admin-check.func';
 
@@ -12,16 +12,16 @@ import { checkAdminStatus } from '../db/admin-check.func';
 export function AdminNavLink() {
   const { isSignedIn, isLoaded } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [hasChecked, setHasChecked] = useState(false);
+  const hasChecked = useRef(false);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && !hasChecked) {
-      setHasChecked(true);
+    if (isLoaded && isSignedIn && !hasChecked.current) {
+      hasChecked.current = true;
       void checkAdminStatus()
         .then(setIsAdmin)
         .catch(() => setIsAdmin(false));
     }
-  }, [isLoaded, isSignedIn, hasChecked]);
+  }, [isLoaded, isSignedIn]);
 
   if (!isAdmin) return null;
 

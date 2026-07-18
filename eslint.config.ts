@@ -37,11 +37,7 @@ export default tseslint.config(
   // React Hooks
   {
     plugins: { 'react-hooks': reactHooksPlugin },
-    rules: {
-      ...reactHooksPlugin.configs.recommended.rules,
-      // set-state-in-effect requires architectural changes — warn for now
-      'react-hooks/set-state-in-effect': 'warn',
-    },
+    rules: reactHooksPlugin.configs.recommended.rules,
   },
 
   // Security
