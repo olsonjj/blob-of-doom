@@ -34,7 +34,6 @@ export function HexagonRating({
   const clamped = Math.max(0, Math.min(5, rating));
   const fullHexes = Math.floor(clamped);
   const partial = clamped - fullHexes;
-  const emptyHexes = 5 - fullHexes - (partial > 0 ? 1 : 0);
 
   const handleClick = async (score: number) => {
     if (!interactive || !onRate || isSubmitting) return;
@@ -46,11 +45,6 @@ export function HexagonRating({
     }
   };
 
-  // Determine the "active" score for highlighting:
-  // 1. If hovering, show hovered score
-  // 2. If user has rated, show their rating
-  // 3. Otherwise, no individual highlight (show average)
-  const activeScore = hoveredScore ?? (interactive ? null : null);
   const highlightScore = hoveredScore ?? userRating ?? null;
 
   return (
@@ -59,7 +53,6 @@ export function HexagonRating({
         const score = i + 1;
         const isFilled = score <= fullHexes;
         const isPartial = !isFilled && score === fullHexes + 1 && partial > 0;
-        const isEmpty = !isFilled && !isPartial;
 
         // Highlight logic:
         // - If hovering: highlight up to hoveredScore
@@ -89,7 +82,7 @@ export function HexagonRating({
       {/* Sign-in prompt for unauthenticated users */}
       {interactive && !isAuthenticated && (
         <span className="ml-2 text-xs text-noir-500">
-          <Link to="/sign-in" className="text-doom-400 hover:text-doom-300 transition-colors">
+          <Link to="/sign-in/$" className="text-doom-400 hover:text-doom-300 transition-colors">
             Sign in
           </Link>
           {' to rate'}

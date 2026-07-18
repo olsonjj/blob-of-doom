@@ -54,7 +54,7 @@ function Home() {
               </Link>
             ) : (
               <Link
-                to="/sign-up"
+                to="/sign-up/$"
                 className="inline-flex items-center justify-center px-4 py-2.5 bg-[#ff5a0a] text-[#15100d] text-xs font-black uppercase tracking-[-0.01em] hover:bg-[#ff7a1a] transition-colors"
               >
                 Upload Your Doom

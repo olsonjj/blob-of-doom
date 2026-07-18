@@ -20,6 +20,8 @@ export interface FeaturedBlob {
   createdAt: Date;
   averageRating: number;
   ratingCount: number;
+  flagged: number;
+  moderationScores: Record<string, number> | null;
 }
 
 // ── Query (extracted for testability) ───────────────────────────────────────
@@ -44,6 +46,8 @@ export async function queryFeatured(): Promise<FeaturedBlob[]> {
       createdAt: blobs.createdAt,
       averageRating: sql<number>`COALESCE(AVG(${ratings.score}::float), 0)`,
       ratingCount: sql<number>`COUNT(${ratings.id})::int`,
+      flagged: blobs.flagged,
+      moderationScores: blobs.moderationScores,
     })
     .from(blobs)
     .leftJoin(ratings, eq(blobs.id, ratings.blobId))

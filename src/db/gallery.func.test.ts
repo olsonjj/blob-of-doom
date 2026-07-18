@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Use vi.hoisted so mock functions are available in the hoisted vi.mock factory
-const { orderByMock, groupByMock, whereMock, leftJoinMock, fromMock, selectMock } = vi.hoisted(() => {
+const { orderByMock, groupByMock, leftJoinMock, fromMock, selectMock } = vi.hoisted(() => {
   const orderByMock = vi.fn().mockReturnValue(Promise.resolve([]));
   const groupByMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
   const whereMock = vi.fn().mockReturnValue({ groupBy: groupByMock });

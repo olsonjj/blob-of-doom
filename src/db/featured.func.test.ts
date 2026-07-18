@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { limitMock, orderByMock, groupByMock, whereMock, leftJoinMock, fromMock, selectMock } = vi.hoisted(() => {
+const { limitMock, orderByMock, groupByMock, leftJoinMock, fromMock, selectMock } = vi.hoisted(() => {
   const limitMock = vi.fn().mockReturnValue(Promise.resolve([]));
   const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
   const groupByMock = vi.fn().mockReturnValue({ orderBy: orderByMock });

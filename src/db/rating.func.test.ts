@@ -4,44 +4,37 @@ import { ratings } from './schema';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const {
-  insertValuesMock,
-  insertOnConflictMock,
-  insertReturningMock,
-  insertMock,
-  selectFromMock,
-  selectWhereMock,
-  selectMock,
-} = vi.hoisted(() => {
-  const insertValuesMock = vi.fn();
-  const insertOnConflictMock = vi.fn();
-  const insertReturningMock = vi.fn();
-  const insertMock = vi.fn().mockReturnValue({
-    values: insertValuesMock.mockReturnValue({
-      onConflictDoUpdate: insertOnConflictMock.mockReturnValue({
-        returning: insertReturningMock,
+const { insertValuesMock, insertOnConflictMock, insertReturningMock, insertMock, selectWhereMock, selectMock } =
+  vi.hoisted(() => {
+    const insertValuesMock = vi.fn();
+    const insertOnConflictMock = vi.fn();
+    const insertReturningMock = vi.fn();
+    const insertMock = vi.fn().mockReturnValue({
+      values: insertValuesMock.mockReturnValue({
+        onConflictDoUpdate: insertOnConflictMock.mockReturnValue({
+          returning: insertReturningMock,
+        }),
       }),
-    }),
-  });
+    });
 
-  const selectFromMock = vi.fn();
-  const selectWhereMock = vi.fn();
-  const selectMock = vi.fn().mockReturnValue({
-    from: selectFromMock.mockReturnValue({
-      where: selectWhereMock,
-    }),
-  });
+    const selectFromMock = vi.fn();
+    const selectWhereMock = vi.fn();
+    const selectMock = vi.fn().mockReturnValue({
+      from: selectFromMock.mockReturnValue({
+        where: selectWhereMock,
+      }),
+    });
 
-  return {
-    insertValuesMock,
-    insertOnConflictMock,
-    insertReturningMock,
-    insertMock,
-    selectFromMock,
-    selectWhereMock,
-    selectMock,
-  };
-});
+    return {
+      insertValuesMock,
+      insertOnConflictMock,
+      insertReturningMock,
+      insertMock,
+      selectFromMock,
+      selectWhereMock,
+      selectMock,
+    };
+  });
 
 vi.mock('./index', () => ({
   db: {

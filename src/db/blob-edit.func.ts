@@ -45,7 +45,7 @@ async function verifyOwnership(blobId: number, userId: string): Promise<void> {
 
 // ── Update blob (extracted for testability) ─────────────────────────────────
 
-export async function updateBlobRecord(input: UpdateBlobInput, userId: string): Promise<{ success: boolean }> {
+export async function updateBlobRecord(input: UpdateBlobInput, userId: string): Promise<{ success: true }> {
   await verifyOwnership(input.blobId, userId);
 
   await db
@@ -64,7 +64,7 @@ export async function updateBlobRecord(input: UpdateBlobInput, userId: string): 
 
 // ── Soft-delete blob (extracted for testability) ────────────────────────────
 
-export async function softDeleteBlobRecord(blobId: number, userId: string): Promise<{ success: boolean }> {
+export async function softDeleteBlobRecord(blobId: number, userId: string): Promise<{ success: true }> {
   await verifyOwnership(blobId, userId);
 
   await db.update(blobs).set({ deleted: 1 }).where(eq(blobs.id, blobId));

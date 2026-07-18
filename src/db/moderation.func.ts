@@ -82,7 +82,7 @@ export async function moderateImage(buffer: Buffer): Promise<ModerationResult> {
     formData.append('api_user', apiUser);
     formData.append('api_secret', apiSecret);
     formData.append('models', 'nudity,wad');
-    formData.append('media', new Blob([buffer]), 'image.jpg');
+    formData.append('media', new Blob([new Uint8Array(buffer)]), 'image.jpg');
 
     const response = await fetch('https://api.sightengine.com/1.0/check.json', {
       method: 'POST',

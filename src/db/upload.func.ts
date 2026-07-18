@@ -154,8 +154,8 @@ export const uploadBlob = createServerFn({ method: 'POST' })
   .handler(async ({ data: formData }): Promise<UploadResult> => {
     // Validate input — return structured errors instead of throwing
     const { data, errors } = validateUploadInput(formData);
-    if (errors.length > 0) {
-      return { success: false, errors };
+    if (errors.length > 0 || !data) {
+      return { success: false, errors: errors.length > 0 ? errors : [{ field: 'general', message: 'Invalid input' }] };
     }
 
     // Auth check — dynamic import keeps server-only code out of the client bundle

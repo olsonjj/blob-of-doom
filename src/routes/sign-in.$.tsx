@@ -18,10 +18,6 @@ function SignInPage() {
         appearance={{
           variables: {
             colorBackground: '#111115',
-            colorText: '#d4d4dc',
-            colorTextSecondary: '#8e8e9e',
-            colorInputBackground: '#1a1a20',
-            colorInputText: '#d4d4dc',
             colorPrimary: '#c41e3a',
             colorDanger: '#e63950',
             borderRadius: '0.5rem',
