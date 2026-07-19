@@ -4,41 +4,48 @@ import { ratings } from './schema';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { insertValuesMock, insertOnConflictMock, insertReturningMock, insertMock, selectWhereMock, selectLimitMock, selectMock } =
-  vi.hoisted(() => {
-    const insertValuesMock = vi.fn();
-    const insertOnConflictMock = vi.fn();
-    const insertReturningMock = vi.fn();
-    const insertMock = vi.fn().mockReturnValue({
-      values: insertValuesMock.mockReturnValue({
-        onConflictDoUpdate: insertOnConflictMock.mockReturnValue({
-          returning: insertReturningMock,
-        }),
+const {
+  insertValuesMock,
+  insertOnConflictMock,
+  insertReturningMock,
+  insertMock,
+  selectWhereMock,
+  selectLimitMock,
+  selectMock,
+} = vi.hoisted(() => {
+  const insertValuesMock = vi.fn();
+  const insertOnConflictMock = vi.fn();
+  const insertReturningMock = vi.fn();
+  const insertMock = vi.fn().mockReturnValue({
+    values: insertValuesMock.mockReturnValue({
+      onConflictDoUpdate: insertOnConflictMock.mockReturnValue({
+        returning: insertReturningMock,
       }),
-    });
-
-    const selectFromMock = vi.fn();
-    const selectWhereMock = vi.fn();
-    const selectLimitMock = vi.fn();
-    // Default: where() returns { limit: selectLimitMock }
-    selectWhereMock.mockReturnValue({ limit: selectLimitMock });
-    const selectMock = vi.fn().mockReturnValue({
-      from: selectFromMock.mockReturnValue({
-        where: selectWhereMock,
-      }),
-    });
-
-    return {
-      insertValuesMock,
-      insertOnConflictMock,
-      insertReturningMock,
-      insertMock,
-      selectFromMock,
-      selectWhereMock,
-      selectLimitMock,
-      selectMock,
-    };
+    }),
   });
+
+  const selectFromMock = vi.fn();
+  const selectWhereMock = vi.fn();
+  const selectLimitMock = vi.fn();
+  // Default: where() returns { limit: selectLimitMock }
+  selectWhereMock.mockReturnValue({ limit: selectLimitMock });
+  const selectMock = vi.fn().mockReturnValue({
+    from: selectFromMock.mockReturnValue({
+      where: selectWhereMock,
+    }),
+  });
+
+  return {
+    insertValuesMock,
+    insertOnConflictMock,
+    insertReturningMock,
+    insertMock,
+    selectFromMock,
+    selectWhereMock,
+    selectLimitMock,
+    selectMock,
+  };
+});
 
 vi.mock('./index', () => ({
   db: {

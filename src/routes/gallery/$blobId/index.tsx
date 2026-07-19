@@ -468,8 +468,8 @@ function BlobDetailPage() {
               <div>
                 <h3 className="text-lg font-bold text-noir-100">Delete this blob?</h3>
                 <p className="mt-2 text-sm text-noir-400 leading-relaxed">
-                  This will permanently remove &ldquo;{blob.title}&rdquo; from the gallery and delete all image
-                  variants from storage. This action cannot be undone.
+                  This will permanently remove &ldquo;{blob.title}&rdquo; from the gallery and delete all image variants
+                  from storage. This action cannot be undone.
                 </p>
               </div>
             </div>
