@@ -1,5 +1,6 @@
 dist/
 node_modules/
 .pi-subagents/
+.vercel/
 src/routeTree.gen.ts
 pnpm-lock.yaml
