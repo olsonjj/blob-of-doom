@@ -32,6 +32,10 @@ vi.mock('./index', () => ({
   },
 }));
 
+vi.mock('@vercel/blob', () => ({
+  del: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { softDeleteBlobRecord, updateBlobRecord } from './blob-edit.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -146,7 +150,16 @@ describe('softDeleteBlobRecord', () => {
   });
 
   it('soft-deletes blob when user owns it', async () => {
+    // First call: verifyOwnership
     mockOwnership({ uploaderProfileId: 'user_1' });
+    // Second call: fetch image URLs before delete
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        imageThumbnailUrl: 'https://blob.vercel/thumb.webp',
+        imageMediumUrl: 'https://blob.vercel/medium.webp',
+        imageFullUrl: 'https://blob.vercel/full.webp',
+      },
+    ]);
 
     const result = await softDeleteBlobRecord(1, 'user_1');
 

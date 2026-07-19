@@ -68,7 +68,7 @@ export async function incrementViewCount(blobId: number): Promise<number> {
   const [updated] = await db
     .update(blobs)
     .set({ viewCount: sql`${blobs.viewCount} + 1` })
-    .where(eq(blobs.id, blobId))
+    .where(and(eq(blobs.id, blobId), eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
     .returning({ viewCount: blobs.viewCount });
 
   return updated?.viewCount ?? 0;

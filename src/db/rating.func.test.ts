@@ -4,7 +4,7 @@ import { ratings } from './schema';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { insertValuesMock, insertOnConflictMock, insertReturningMock, insertMock, selectWhereMock, selectMock } =
+const { insertValuesMock, insertOnConflictMock, insertReturningMock, insertMock, selectWhereMock, selectLimitMock, selectMock } =
   vi.hoisted(() => {
     const insertValuesMock = vi.fn();
     const insertOnConflictMock = vi.fn();
@@ -19,6 +19,9 @@ const { insertValuesMock, insertOnConflictMock, insertReturningMock, insertMock,
 
     const selectFromMock = vi.fn();
     const selectWhereMock = vi.fn();
+    const selectLimitMock = vi.fn();
+    // Default: where() returns { limit: selectLimitMock }
+    selectWhereMock.mockReturnValue({ limit: selectLimitMock });
     const selectMock = vi.fn().mockReturnValue({
       from: selectFromMock.mockReturnValue({
         where: selectWhereMock,
@@ -32,6 +35,7 @@ const { insertValuesMock, insertOnConflictMock, insertReturningMock, insertMock,
       insertMock,
       selectFromMock,
       selectWhereMock,
+      selectLimitMock,
       selectMock,
     };
   });
@@ -47,7 +51,7 @@ vi.mock('@clerk/tanstack-react-start/server', () => ({
   auth: vi.fn(),
 }));
 
-import { calculateAverage, upsertRating, validateRatingInput } from './rating.func';
+import { calculateAverage, checkBlobVisible, upsertRating, validateRatingInput } from './rating.func';
 
 // ── Tests: validateRatingInput ──────────────────────────────────────────────
 
@@ -110,6 +114,38 @@ describe('validateRatingInput', () => {
   it('accepts boundary scores 1 and 5', () => {
     expect(validateRatingInput({ blobId: 1, score: 1 }).error).toBeNull();
     expect(validateRatingInput({ blobId: 1, score: 5 }).error).toBeNull();
+  });
+});
+
+// ── Tests: checkBlobVisible ────────────────────────────────────────────────
+
+describe('checkBlobVisible', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('resolves when blob is visible (not deleted, not flagged)', async () => {
+    selectLimitMock.mockResolvedValueOnce([{ id: 1 }]);
+
+    await expect(checkBlobVisible(1)).resolves.toBeUndefined();
+  });
+
+  it('throws "Blob not found" when blob is deleted', async () => {
+    selectLimitMock.mockResolvedValueOnce([]);
+
+    await expect(checkBlobVisible(1)).rejects.toThrow('Blob not found');
+  });
+
+  it('throws "Blob not found" when blob is flagged', async () => {
+    selectLimitMock.mockResolvedValueOnce([]);
+
+    await expect(checkBlobVisible(1)).rejects.toThrow('Blob not found');
+  });
+
+  it('throws "Blob not found" when blob does not exist', async () => {
+    selectLimitMock.mockResolvedValueOnce([]);
+
+    await expect(checkBlobVisible(999)).rejects.toThrow('Blob not found');
   });
 });
 

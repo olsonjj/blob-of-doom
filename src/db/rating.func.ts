@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { checkNotBanned } from './auth-guards.func';
 import { db } from './index';
-import { ratings } from './schema';
+import { blobs, ratings } from './schema';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,6 +45,22 @@ export function validateRatingInput(input: unknown): {
   }
 
   return { data: { blobId, score }, error: null };
+}
+
+// ── Blob visibility check (extracted for testability) ───────────────────────
+
+/**
+ * Verify that a blob exists and is visible (not deleted, not flagged).
+ * Throws "Blob not found" if the blob is hidden or doesn't exist.
+ */
+export async function checkBlobVisible(blobId: number): Promise<void> {
+  const [blob] = await db
+    .select({ id: blobs.id })
+    .from(blobs)
+    .where(and(eq(blobs.id, blobId), eq(blobs.deleted, 0), eq(blobs.flagged, 0)))
+    .limit(1);
+
+  if (!blob) throw new Error('Blob not found');
 }
 
 // ── Upsert (extracted for testability) ──────────────────────────────────────
@@ -108,6 +124,9 @@ export const submitRating = createServerFn({ method: 'POST' })
 
     // Banned check
     await checkNotBanned(userId);
+
+    // Verify blob is visible (not deleted, not flagged)
+    await checkBlobVisible(data.blobId);
 
     // Upsert the rating
     await upsertRating(data.blobId, userId, data.score);

@@ -148,4 +148,18 @@ describe('incrementViewCount', () => {
     const result = await incrementViewCount(1);
     expect(result).toBe(1);
   });
+
+  it('returns 0 when blob is deleted (WHERE clause excludes hidden blobs)', async () => {
+    updateReturningMock.mockResolvedValueOnce([]);
+
+    const result = await incrementViewCount(1);
+    expect(result).toBe(0);
+  });
+
+  it('returns 0 when blob is flagged (WHERE clause excludes hidden blobs)', async () => {
+    updateReturningMock.mockResolvedValueOnce([]);
+
+    const result = await incrementViewCount(1);
+    expect(result).toBe(0);
+  });
 });

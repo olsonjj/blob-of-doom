@@ -65,10 +65,37 @@ export async function updateBlobRecord(input: UpdateBlobInput, userId: string): 
 
 // ── Soft-delete blob (extracted for testability) ────────────────────────────
 
+/**
+ * Soft-delete a blob: mark deleted=1 in the DB and remove image files from
+ * Vercel Blob storage. File deletion is best-effort — failures are logged
+ * but do not prevent the DB update.
+ */
 export async function softDeleteBlobRecord(blobId: number, userId: string): Promise<{ success: true }> {
   await verifyOwnership(blobId, userId);
 
+  // Fetch image URLs before marking deleted
+  const [blob] = await db
+    .select({
+      imageThumbnailUrl: blobs.imageThumbnailUrl,
+      imageMediumUrl: blobs.imageMediumUrl,
+      imageFullUrl: blobs.imageFullUrl,
+    })
+    .from(blobs)
+    .where(eq(blobs.id, blobId))
+    .limit(1);
+
+  // Mark as deleted in the DB
   await db.update(blobs).set({ deleted: 1 }).where(eq(blobs.id, blobId));
+
+  // Delete files from Vercel Blob — best-effort, log failures but don't throw
+  if (blob) {
+    const { del } = await import('@vercel/blob');
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const storeId = process.env.BLOB_STORE_ID;
+    await del([blob.imageThumbnailUrl, blob.imageMediumUrl, blob.imageFullUrl], { token, storeId }).catch((err) => {
+      console.error('Failed to delete Blob files for blobId:', blobId, err);
+    });
+  }
 
   return { success: true };
 }

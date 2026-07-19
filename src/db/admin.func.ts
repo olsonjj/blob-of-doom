@@ -130,7 +130,7 @@ export async function removeBlob(blobId: number): Promise<void> {
     .limit(1);
   if (!blob) throw new Error('Blob not found');
 
-  // Soft-delete the DB row first (preserves metadata for audit/recovery)
+  // Mark the DB row as deleted
   await db.update(blobs).set({ deleted: 1 }).where(eq(blobs.id, blobId));
 
   // Then delete from Vercel Blob — best-effort, log failures but don't throw
