@@ -14,6 +14,6 @@
 - [x] All six `"latest"` version strings in `package.json` are replaced with explicit `^` semver ranges matching the currently resolved versions
 - [x] `pnpm install` produces an identical lockfile after the version string changes
 - [x] `.env.example` is not ignored by git (`.gitignore` has `!.env.example` before the `.env*` rule)
-- [ ] `nitro` is pinned to a stable release or the beta is documented with a reason
+- [x] `nitro` is pinned to a stable release or the beta is documented with a reason
 - [x] TypeScript and typescript-eslint versions are compatible (either downgrade TS to ^5.x or upgrade typescript-eslint)
 - [x] Build and deploy still succeed
