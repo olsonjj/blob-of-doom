@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { insertMock, updateMock, selectMock, selectLimitMock } = vi.hoisted(() => {
+const { insertMock, updateMock, selectMock, selectLimitMock, updateReturningMock } = vi.hoisted(() => {
   const insertValuesMock = vi.fn();
   const insertReturningMock = vi.fn();
   const insertMock = vi.fn().mockReturnValue({
@@ -10,9 +10,10 @@ const { insertMock, updateMock, selectMock, selectLimitMock } = vi.hoisted(() =>
   });
 
   const updateSetMock = vi.fn();
+  const updateReturningMock = vi.fn();
   const updateWhereMock = vi.fn();
   const updateMock = vi.fn().mockReturnValue({
-    set: updateSetMock.mockReturnValue({ where: updateWhereMock }),
+    set: updateSetMock.mockReturnValue({ where: updateWhereMock.mockReturnValue({ returning: updateReturningMock }) }),
   });
 
   const selectFromMock = vi.fn();
@@ -33,6 +34,7 @@ const { insertMock, updateMock, selectMock, selectLimitMock } = vi.hoisted(() =>
     updateMock,
     updateSetMock,
     updateWhereMock,
+    updateReturningMock,
     selectMock,
     selectFromMock,
     selectWhereMock,
@@ -66,7 +68,7 @@ vi.mock('sharp', () => {
   return { default: mockSharp };
 });
 
-import { checkUploadLimit, processImageVariants, todayDateString, validateUploadInput } from './upload.func';
+import { checkUploadLimit, incrementUploadCount, processImageVariants, todayDateString, validateUploadInput } from './upload.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -245,6 +247,7 @@ describe('checkUploadLimit', () => {
     await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({
       currentCount: 0,
       lastDate: '2024-12-01',
+      limit: 1,
     });
   });
 
@@ -260,7 +263,7 @@ describe('checkUploadLimit', () => {
       },
     ]);
 
-    await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({ currentCount: 0, lastDate: null });
+    await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({ currentCount: 0, lastDate: null, limit: 1 });
   });
 
   it('throws when upload limit reached (same day, count >= 1)', async () => {
@@ -300,7 +303,146 @@ describe('checkUploadLimit', () => {
     await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({
       currentCount: 5,
       lastDate: '2024-12-02',
+      limit: -1,
     });
+  });
+
+  it('grants approved users a limit of 10/day', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 5,
+        lastUploadDate: '2024-12-02',
+        approved: 1,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+
+    await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({
+      currentCount: 5,
+      lastDate: '2024-12-02',
+      limit: 10,
+    });
+  });
+
+  it('throws when approved user reaches 10/day', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 10,
+        lastUploadDate: '2024-12-02',
+        approved: 1,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+
+    await expect(checkUploadLimit('user_1', '2024-12-02')).rejects.toThrow('Upload limit reached. You can upload 10 blob(s) per day.');
+  });
+
+  it('grants unapproved users a limit of 1/day', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 0,
+        lastUploadDate: '2024-12-01',
+        approved: 0,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+
+    await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({
+      currentCount: 0,
+      lastDate: '2024-12-01',
+      limit: 1,
+    });
+  });
+});
+
+// ── Tests: incrementUploadCount ─────────────────────────────────────────────
+
+describe('incrementUploadCount', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('increments count for a new day', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 5,
+        lastUploadDate: '2024-12-01',
+        approved: 0,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+    updateReturningMock.mockResolvedValueOnce([{ uploadCountToday: 1 }]);
+
+    const result = await incrementUploadCount('user_1', 1, '2024-12-02');
+
+    expect(result.newCount).toBe(1);
+    expect(result.previousCount).toBe(5);
+    expect(result.previousDate).toBe('2024-12-01');
+  });
+
+  it('increments count for the same day', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 3,
+        lastUploadDate: '2024-12-02',
+        approved: 0,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+    updateReturningMock.mockResolvedValueOnce([{ uploadCountToday: 4 }]);
+
+    const result = await incrementUploadCount('user_1', 10, '2024-12-02');
+
+    expect(result.newCount).toBe(4);
+    expect(result.previousCount).toBe(3);
+    expect(result.previousDate).toBe('2024-12-02');
+  });
+
+  it('throws when the atomic UPDATE returns no rows (race lost)', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 0,
+        lastUploadDate: '2024-12-02',
+        approved: 0,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+    // Simulate another request consuming the last slot
+    updateReturningMock.mockResolvedValueOnce([]);
+
+    await expect(incrementUploadCount('user_1', 1, '2024-12-02')).rejects.toThrow('Upload limit reached');
+  });
+
+  it('handles null previous date (first ever upload)', async () => {
+    selectLimitMock.mockResolvedValueOnce([
+      {
+        clerkUserId: 'user_1',
+        uploadCountToday: 0,
+        lastUploadDate: null,
+        approved: 0,
+        banned: 0,
+        createdAt: new Date(),
+      },
+    ]);
+    updateReturningMock.mockResolvedValueOnce([{ uploadCountToday: 1 }]);
+
+    const result = await incrementUploadCount('user_1', 1, '2024-12-02');
+
+    expect(result.newCount).toBe(1);
+    expect(result.previousCount).toBe(0);
+    expect(result.previousDate).toBeNull();
   });
 });
 

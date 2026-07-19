@@ -1,7 +1,7 @@
 # Implementation Spec — Code Review Remediation
 
 **Based on:** Independent code review (2025-07-20) — security, code quality/architecture, and config/supply-chain passes  
-**Status:** Not started  
+**Status:** In progress — 01, 02, 03 complete  
 **Tickets:** [`issues/`](issues/) — 10 vertical slices, numbered in dependency order
 
 ---
@@ -17,8 +17,8 @@ A three-pass independent review of ~7.3k LOC across TanStack Start (React 19 SSR
 | # | Ticket | Blocked by | Description |
 |---|--------|-----------|-------------|
 | 01 | [Codebase consolidation](issues/01-codebase-consolidation.md) | — | Prefactor: one DB access pattern, one admin guard, one validation approach |
-| 02 | [Approved upload limit](issues/02-approved-upload-limit.md) | 01 | Approved users get 10 uploads/day; unapproved get 1 |
-| 03 | [Upload race condition](issues/03-upload-race-condition.md) | 01 | Atomic daily upload count — concurrent requests can't bypass the cap |
+| 02 | [Approved upload limit](issues/02-approved-upload-limit.md) | 01 ✅ | Approved users get 10 uploads/day; unapproved get 1 |
+| 03 | [Upload race condition](issues/03-upload-race-condition.md) | 01 ✅ | Atomic daily upload count — concurrent requests can't bypass the cap |
 | 04 | [Admin error handling](issues/04-admin-error-handling.md) | 01 | Admin dashboard shows error messages instead of crashing on fetch failures |
 | 05 | [Production hardening](issues/05-production-hardening.md) | — | Security headers, CI, pinned deps, committable `.env.example` |
 | 06 | [Moderation gating](issues/06-moderation-gating.md) | 01 | Can't rate/view-count hidden blobs; consistent delete behavior |

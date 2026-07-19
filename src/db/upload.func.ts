@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { ALLOWED_TYPES, MAX_FILE_SIZE } from '../shared/constants';
 import { checkNotBanned } from './auth-guards.func';
@@ -116,13 +116,18 @@ export function todayDateString(): string {
 
 /**
  * Check whether the given user has already uploaded today.
- * Throws if the limit is reached; otherwise returns the current count
- * so the caller can increment it after a successful upload.
+ * Throws if the limit is reached; otherwise returns the current count,
+ * last date, and the per-day limit for this user.
+ *
+ * Limits:
+ * - Admins: unlimited (limit = -1 sentinel)
+ * - Approved users: 10/day
+ * - Unapproved users: 1/day
  */
 export async function checkUploadLimit(
   userId: string,
   _today?: string,
-): Promise<{ currentCount: number; lastDate: string | null }> {
+): Promise<{ currentCount: number; lastDate: string | null; limit: number }> {
   const today = _today ?? todayDateString();
 
   const [profile] = await db.select().from(profiles).where(eq(profiles.clerkUserId, userId)).limit(1);
@@ -134,17 +139,68 @@ export async function checkUploadLimit(
     return {
       currentCount: profile.uploadCountToday,
       lastDate: profile.lastUploadDate,
+      limit: -1,
     };
   }
 
-  if (profile.lastUploadDate === today && profile.uploadCountToday >= 1) {
-    throw new Error('Upload limit reached. You can upload 1 blob per day.');
+  // Approved users get 10/day, unapproved get 1/day
+  const limit = profile.approved === 1 ? 10 : 1;
+
+  if (profile.lastUploadDate === today && profile.uploadCountToday >= limit) {
+    throw new Error(`Upload limit reached. You can upload ${limit} blob(s) per day.`);
   }
 
   return {
     currentCount: profile.uploadCountToday,
     lastDate: profile.lastUploadDate,
+    limit,
   };
+}
+
+// ── Atomic upload-count increment (extracted for testability) ───────────────
+
+/**
+ * Atomically increment the daily upload count for a user.
+ *
+ * Uses a single UPDATE with a WHERE clause that re-checks the limit,
+ * so two concurrent requests cannot both succeed when only one slot
+ * remains.  Returns the previous state so the caller can roll back
+ * if the upload fails after the count is incremented.
+ *
+ * Throws if the limit was reached (including when another request
+ * consumed the last slot between checkUploadLimit and this call).
+ */
+export async function incrementUploadCount(
+  userId: string,
+  limit: number,
+  today: string,
+): Promise<{ newCount: number; previousCount: number; previousDate: string | null }> {
+  // Snapshot current state for potential rollback
+  const [profile] = await db.select().from(profiles).where(eq(profiles.clerkUserId, userId)).limit(1);
+  const previousCount = profile?.uploadCountToday ?? 0;
+  const previousDate = profile?.lastUploadDate ?? null;
+
+  // Atomic increment: only updates if the user is still under the limit
+  // OR it's a new day (lastUploadDate differs from today).
+  const [updated] = await db
+    .update(profiles)
+    .set({
+      uploadCountToday: sql`CASE WHEN ${profiles.lastUploadDate} = ${today}::date THEN ${profiles.uploadCountToday} + 1 ELSE 1 END`,
+      lastUploadDate: today,
+    })
+    .where(
+      and(
+        eq(profiles.clerkUserId, userId),
+        sql`(${profiles.lastUploadDate} IS DISTINCT FROM ${today}::date OR ${profiles.uploadCountToday} < ${limit})`,
+      ),
+    )
+    .returning({ uploadCountToday: profiles.uploadCountToday });
+
+  if (!updated) {
+    throw new Error(`Upload limit reached. You can upload ${limit} blob(s) per day.`);
+  }
+
+  return { newCount: updated.uploadCountToday, previousCount, previousDate };
 }
 
 // ── Server function ─────────────────────────────────────────────────────────
@@ -166,23 +222,19 @@ export const uploadBlob = createServerFn({ method: 'POST' })
     // Banned check
     await checkNotBanned(userId);
 
-    // Rate limit
+    // Rate limit — checkUploadLimit throws if the user is already at their cap
     const today = todayDateString();
-    await checkUploadLimit(userId, today);
+    const { limit } = await checkUploadLimit(userId, today);
 
-    // Increment count immediately to close the TOCTOU race window.
+    // Atomically increment the upload count (non-admins only).
     // If any subsequent step fails, the count is rolled back in the catch.
-    const [profile] = await db.select().from(profiles).where(eq(profiles.clerkUserId, userId)).limit(1);
-
-    const previousCount = profile?.uploadCountToday ?? 0;
-    const previousDate = profile?.lastUploadDate ?? null;
-
-    const newCount = profile && profile.lastUploadDate === today ? profile.uploadCountToday + 1 : 1;
-
-    await db
-      .update(profiles)
-      .set({ uploadCountToday: newCount, lastUploadDate: today })
-      .where(eq(profiles.clerkUserId, userId));
+    let previousCount = 0;
+    let previousDate: string | null = null;
+    if (limit > 0) {
+      const result = await incrementUploadCount(userId, limit, today);
+      previousCount = result.previousCount;
+      previousDate = result.previousDate;
+    }
 
     // Process image, moderate, upload, insert — with rollback on failure
     let newBlob: typeof blobs.$inferSelect | undefined;

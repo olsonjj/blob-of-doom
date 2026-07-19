@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] `checkUploadLimit()` reads `profile.approved` and grants 10/day for approved users, 1/day for unapproved
-- [ ] Admins still bypass the limit entirely (no regression)
-- [ ] Banned users are still blocked from uploading (no regression)
-- [ ] Admin UI confirm modal text for approve/unapprove matches the actual server behavior
-- [ ] Test: approved user can upload 10 times in one day
-- [ ] Test: unapproved user is limited to 1/day
-- [ ] Test: admin bypass still works
+- [x] `checkUploadLimit()` reads `profile.approved` and grants 10/day for approved users, 1/day for unapproved
+- [x] Admins still bypass the limit entirely (no regression)
+- [x] Banned users are still blocked from uploading (no regression)
+- [x] Admin UI confirm modal text for approve/unapprove matches the actual server behavior
+- [x] Test: approved user can upload 10 times in one day
+- [x] Test: unapproved user is limited to 1/day
+- [x] Test: admin bypass still works

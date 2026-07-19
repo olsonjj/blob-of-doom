@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Daily upload count uses an atomic increment (`SET upload_count_today = upload_count_today + 1`) instead of SELECT-then-UPDATE
-- [ ] Concurrent requests from the same user cannot both succeed when only one slot remains
-- [ ] If upload fails after the count is incremented (processing error, moderation error, blob storage error), the count is rolled back so the daily slot is not permanently consumed
-- [ ] Successful uploads count exactly once
-- [ ] Test: two concurrent uploads from the same user — only one succeeds
-- [ ] Test: failed upload rolls back the count
-- [ ] Existing upload tests pass
+- [x] Daily upload count uses an atomic increment (`SET upload_count_today = upload_count_today + 1`) instead of SELECT-then-UPDATE
+- [x] Concurrent requests from the same user cannot both succeed when only one slot remains
+- [x] If upload fails after the count is incremented (processing error, moderation error, blob storage error), the count is rolled back so the daily slot is not permanently consumed
+- [x] Successful uploads count exactly once
+- [x] Test: two concurrent uploads from the same user — only one succeeds
+- [x] Test: failed upload rolls back the count
+- [x] Existing upload tests pass
