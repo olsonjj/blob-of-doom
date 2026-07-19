@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 
 import { requireAdmin } from './auth-guards.func';
 import { db } from './index';
@@ -21,6 +21,7 @@ export interface FeedbackRow {
   email: string | null;
   submitterProfileId: string | null;
   submitterProvider: string | null;
+  submitterIp: string | null;
   resolved: number;
   createdAt: Date;
 }
@@ -86,6 +87,7 @@ export async function insertFeedback(
   email: string | null,
   submitterProfileId: string | null,
   submitterProvider: string | null,
+  submitterIp: string | null,
 ): Promise<FeedbackRow> {
   const [row] = await db
     .insert(feedback)
@@ -95,10 +97,70 @@ export async function insertFeedback(
       email,
       submitterProfileId,
       submitterProvider,
+      submitterIp,
     })
     .returning();
 
   return row;
+}
+
+// ── Rate limiting (extracted for testability) ───────────────────────────────
+
+/** Maximum feedback submissions per identity per hour. */
+export const FEEDBACK_RATE_LIMIT = 5;
+
+/**
+ * Check whether the submitter has exceeded the feedback rate limit.
+ *
+ * Authenticated users are rate-limited by `submitterProfileId`;
+ * anonymous users are rate-limited by IP.
+ *
+ * Throws with a user-friendly message if the limit is reached.
+ * Returns the current count otherwise.
+ */
+export async function checkFeedbackRateLimit(
+  submitterProfileId: string | null,
+  ip: string | null,
+): Promise<number> {
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+  let count: number;
+  if (submitterProfileId) {
+    // Authenticated user — count by profile ID
+    const rows = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(feedback)
+      .where(
+        and(
+          eq(feedback.submitterProfileId, submitterProfileId),
+          gte(feedback.createdAt, oneHourAgo),
+        ),
+      );
+    count = Number(rows[0]?.count ?? 0);
+  } else if (ip) {
+    // Anonymous user — count by IP
+    const rows = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(feedback)
+      .where(
+        and(
+          eq(feedback.submitterIp, ip),
+          gte(feedback.createdAt, oneHourAgo),
+        ),
+      );
+    count = Number(rows[0]?.count ?? 0);
+  } else {
+    // No identity to rate-limit by — allow the submission
+    return 0;
+  }
+
+  if (count >= FEEDBACK_RATE_LIMIT) {
+    throw new Error(
+      'You\'ve submitted a lot of feedback recently. Please wait a bit before sending more — we want to make sure every submission gets proper attention.',
+    );
+  }
+
+  return count;
 }
 
 // ── Server function ─────────────────────────────────────────────────────────
@@ -139,7 +201,19 @@ export const submitFeedback = createServerFn({ method: 'POST' })
       // Auth not available (e.g., in tests) — proceed with whatever we have
     }
 
-    return insertFeedback(data.category, data.message, email, submitterProfileId, submitterProvider);
+    // Get client IP for anonymous rate limiting
+    let submitterIp: string | null = null;
+    try {
+      const { getRequestIP } = await import('@tanstack/start-server-core');
+      submitterIp = getRequestIP({ xForwardedFor: true }) ?? null;
+    } catch {
+      // getRequestIP not available (e.g., in tests) — proceed without IP
+    }
+
+    // Rate limit check — throws with friendly message if exceeded
+    await checkFeedbackRateLimit(submitterProfileId, submitterIp);
+
+    return insertFeedback(data.category, data.message, email, submitterProfileId, submitterProvider, submitterIp);
   });
 
 // ── Query all feedback (extracted for testability) ──────────────────────────

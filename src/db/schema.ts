@@ -47,6 +47,7 @@ export const feedback = pgTable('feedback', {
   email: text('email'), // nullable — populated from Clerk if signed in, or optional anonymous field
   submitterProfileId: text('submitter_profile_id').references(() => profiles.clerkUserId), // null for anonymous
   submitterProvider: text('submitter_provider'), // e.g. 'google', 'github', 'discord' — null for anonymous
+  submitterIp: text('submitter_ip'), // client IP — used for anonymous rate limiting
   resolved: integer('resolved').notNull().default(0), // 0 = open, 1 = resolved
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

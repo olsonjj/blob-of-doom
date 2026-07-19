@@ -1,0 +1,1 @@
+ALTER TABLE "feedback" ADD COLUMN "submitter_ip" text;

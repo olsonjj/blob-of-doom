@@ -9,6 +9,7 @@ const {
   selectMock,
   selectFromMock,
   selectOrderByMock,
+  selectWhereMock,
   updateMock,
   updateSetMock,
   updateWhereMock,
@@ -26,7 +27,11 @@ const {
   });
 
   const selectOrderByMock = vi.fn();
-  const selectFromMock = vi.fn().mockReturnValue({ orderBy: selectOrderByMock });
+  const selectWhereMock = vi.fn();
+  const selectFromMock = vi.fn().mockReturnValue({
+    orderBy: selectOrderByMock,
+    where: selectWhereMock,
+  });
   const selectMock = vi.fn().mockReturnValue({ from: selectFromMock });
 
   const updateSetMock = vi.fn();
@@ -55,6 +60,7 @@ const {
     selectMock,
     selectFromMock,
     selectOrderByMock,
+    selectWhereMock,
     updateMock,
     updateSetMock,
     updateWhereMock,
@@ -80,6 +86,8 @@ vi.mock('@clerk/tanstack-react-start/server', () => ({
 }));
 
 import {
+  checkFeedbackRateLimit,
+  FEEDBACK_RATE_LIMIT,
   insertFeedback,
   queryAllFeedback,
   removeFeedback,
@@ -97,6 +105,7 @@ function makeFeedbackRow(
     email: string | null;
     submitterProfileId: string | null;
     submitterProvider: string | null;
+    submitterIp: string | null;
     resolved: number;
     createdAt: Date;
   }> = {},
@@ -108,6 +117,7 @@ function makeFeedbackRow(
     email: overrides.email ?? null,
     submitterProfileId: overrides.submitterProfileId ?? null,
     submitterProvider: overrides.submitterProvider ?? null,
+    submitterIp: overrides.submitterIp ?? null,
     resolved: overrides.resolved ?? 0,
     createdAt: overrides.createdAt ?? new Date('2025-01-01T00:00:00Z'),
   };
@@ -233,7 +243,7 @@ describe('insertFeedback', () => {
     });
     insertReturningMock.mockResolvedValueOnce([row]);
 
-    const result = await insertFeedback('bug', 'Something is broken', 'user@example.com', 'user_1', 'google');
+    const result = await insertFeedback('bug', 'Something is broken', 'user@example.com', 'user_1', 'google', '1.2.3.4');
 
     expect(insertValuesMock).toHaveBeenCalledWith({
       category: 'bug',
@@ -241,6 +251,7 @@ describe('insertFeedback', () => {
       email: 'user@example.com',
       submitterProfileId: 'user_1',
       submitterProvider: 'google',
+      submitterIp: '1.2.3.4',
     });
     expect(result).toEqual(row);
     expect(result.category).toBe('bug');
@@ -256,7 +267,7 @@ describe('insertFeedback', () => {
     });
     insertReturningMock.mockResolvedValueOnce([row]);
 
-    const result = await insertFeedback('feature', 'Add dark mode', 'anon@example.com', null, null);
+    const result = await insertFeedback('feature', 'Add dark mode', 'anon@example.com', null, null, '5.6.7.8');
 
     expect(insertValuesMock).toHaveBeenCalledWith({
       category: 'feature',
@@ -264,6 +275,7 @@ describe('insertFeedback', () => {
       email: 'anon@example.com',
       submitterProfileId: null,
       submitterProvider: null,
+      submitterIp: '5.6.7.8',
     });
     expect(result.submitterProfileId).toBeNull();
     expect(result.email).toBe('anon@example.com');
@@ -278,7 +290,7 @@ describe('insertFeedback', () => {
     });
     insertReturningMock.mockResolvedValueOnce([row]);
 
-    const result = await insertFeedback('bug', 'Page is slow', null, null, null);
+    const result = await insertFeedback('bug', 'Page is slow', null, null, null, null);
 
     expect(insertValuesMock).toHaveBeenCalledWith({
       category: 'bug',
@@ -286,6 +298,7 @@ describe('insertFeedback', () => {
       email: null,
       submitterProfileId: null,
       submitterProvider: null,
+      submitterIp: null,
     });
     expect(result.email).toBeNull();
     expect(result.submitterProfileId).toBeNull();
@@ -295,7 +308,7 @@ describe('insertFeedback', () => {
     const row = makeFeedbackRow({ id: 42, createdAt: new Date('2025-07-20T12:00:00Z') });
     insertReturningMock.mockResolvedValueOnce([row]);
 
-    const result = await insertFeedback('bug', 'test', null, null, null);
+    const result = await insertFeedback('bug', 'test', null, null, null, null);
 
     expect(result.id).toBe(42);
     expect(result.createdAt).toEqual(new Date('2025-07-20T12:00:00Z'));
@@ -384,5 +397,102 @@ describe('removeFeedback', () => {
     deleteReturningMock.mockResolvedValueOnce([]);
 
     await expect(removeFeedback(999)).rejects.toThrow('Feedback not found');
+  });
+});
+
+// ── Tests: checkFeedbackRateLimit ───────────────────────────────────────────
+
+describe('checkFeedbackRateLimit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('allows submission when under the limit (authenticated user)', async () => {
+    // Mock: 3 submissions in the last hour
+    selectWhereMock.mockResolvedValueOnce([{ count: 3 }]);
+
+    const count = await checkFeedbackRateLimit('user_1', null);
+
+    expect(count).toBe(3);
+    expect(selectMock).toHaveBeenCalled();
+    expect(selectFromMock).toHaveBeenCalled();
+    expect(selectWhereMock).toHaveBeenCalled();
+  });
+
+  it('allows submission when under the limit (anonymous user by IP)', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 2 }]);
+
+    const count = await checkFeedbackRateLimit(null, '10.0.0.1');
+
+    expect(count).toBe(2);
+  });
+
+  it('allows submission when no identity is available', async () => {
+    // No profile ID and no IP — should return 0 without querying
+    const count = await checkFeedbackRateLimit(null, null);
+
+    expect(count).toBe(0);
+    expect(selectWhereMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects 6th submission within the hour (authenticated user)', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 5 }]);
+
+    await expect(checkFeedbackRateLimit('user_1', null)).rejects.toThrow(
+      'You\'ve submitted a lot of feedback recently',
+    );
+  });
+
+  it('rejects 6th submission within the hour (anonymous user by IP)', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 5 }]);
+
+    await expect(checkFeedbackRateLimit(null, '10.0.0.1')).rejects.toThrow(
+      'You\'ve submitted a lot of feedback recently',
+    );
+  });
+
+  it('rejects when count exceeds the limit', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 10 }]);
+
+    await expect(checkFeedbackRateLimit('user_1', null)).rejects.toThrow(
+      'You\'ve submitted a lot of feedback recently',
+    );
+  });
+
+  it('allows exactly 5 submissions (at the boundary)', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 4 }]);
+
+    const count = await checkFeedbackRateLimit('user_1', null);
+
+    expect(count).toBe(4);
+  });
+
+  it('uses FEEDBACK_RATE_LIMIT constant for the threshold', () => {
+    expect(FEEDBACK_RATE_LIMIT).toBe(5);
+  });
+
+  it('queries by submitterProfileId for authenticated users', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 0 }]);
+
+    await checkFeedbackRateLimit('user_42', '10.0.0.1');
+
+    // When submitterProfileId is present, it should be used (IP ignored)
+    expect(selectWhereMock).toHaveBeenCalled();
+  });
+
+  it('queries by IP for anonymous users', async () => {
+    selectWhereMock.mockResolvedValueOnce([{ count: 0 }]);
+
+    await checkFeedbackRateLimit(null, '192.168.1.1');
+
+    expect(selectWhereMock).toHaveBeenCalled();
+  });
+
+  it('returns 0 when DB returns no rows', async () => {
+    selectWhereMock.mockResolvedValueOnce([]);
+
+    const count = await checkFeedbackRateLimit('user_1', null);
+
+    expect(count).toBe(0);
   });
 });

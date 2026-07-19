@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { selectMock, selectLimitMock, updateMock, updateSetMock, updateWhereMock, updateReturningMock } = vi.hoisted(
+const { selectMock, selectLimitMock, updateMock, updateReturningMock } = vi.hoisted(
   () => {
     const selectGroupByMock = vi.fn();
     const selectWhereMock = vi.fn().mockReturnValue({ groupBy: selectGroupByMock });
