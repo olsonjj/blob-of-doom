@@ -243,7 +243,14 @@ describe('insertFeedback', () => {
     });
     insertReturningMock.mockResolvedValueOnce([row]);
 
-    const result = await insertFeedback('bug', 'Something is broken', 'user@example.com', 'user_1', 'google', '1.2.3.4');
+    const result = await insertFeedback(
+      'bug',
+      'Something is broken',
+      'user@example.com',
+      'user_1',
+      'google',
+      '1.2.3.4',
+    );
 
     expect(insertValuesMock).toHaveBeenCalledWith({
       category: 'bug',
@@ -438,25 +445,21 @@ describe('checkFeedbackRateLimit', () => {
   it('rejects 6th submission within the hour (authenticated user)', async () => {
     selectWhereMock.mockResolvedValueOnce([{ count: 5 }]);
 
-    await expect(checkFeedbackRateLimit('user_1', null)).rejects.toThrow(
-      'You\'ve submitted a lot of feedback recently',
-    );
+    await expect(checkFeedbackRateLimit('user_1', null)).rejects.toThrow("You've submitted a lot of feedback recently");
   });
 
   it('rejects 6th submission within the hour (anonymous user by IP)', async () => {
     selectWhereMock.mockResolvedValueOnce([{ count: 5 }]);
 
     await expect(checkFeedbackRateLimit(null, '10.0.0.1')).rejects.toThrow(
-      'You\'ve submitted a lot of feedback recently',
+      "You've submitted a lot of feedback recently",
     );
   });
 
   it('rejects when count exceeds the limit', async () => {
     selectWhereMock.mockResolvedValueOnce([{ count: 10 }]);
 
-    await expect(checkFeedbackRateLimit('user_1', null)).rejects.toThrow(
-      'You\'ve submitted a lot of feedback recently',
-    );
+    await expect(checkFeedbackRateLimit('user_1', null)).rejects.toThrow("You've submitted a lot of feedback recently");
   });
 
   it('allows exactly 5 submissions (at the boundary)', async () => {

@@ -2,41 +2,39 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { selectMock, selectLimitMock, updateMock, updateReturningMock } = vi.hoisted(
-  () => {
-    const selectGroupByMock = vi.fn();
-    const selectWhereMock = vi.fn().mockReturnValue({ groupBy: selectGroupByMock });
-    const selectLeftJoinMock = vi.fn().mockReturnValue({ where: selectWhereMock });
-    const selectFromMock = vi.fn().mockReturnValue({ leftJoin: selectLeftJoinMock });
-    const selectMock = vi.fn().mockReturnValue({ from: selectFromMock });
+const { selectMock, selectLimitMock, updateMock, updateReturningMock } = vi.hoisted(() => {
+  const selectGroupByMock = vi.fn();
+  const selectWhereMock = vi.fn().mockReturnValue({ groupBy: selectGroupByMock });
+  const selectLeftJoinMock = vi.fn().mockReturnValue({ where: selectWhereMock });
+  const selectFromMock = vi.fn().mockReturnValue({ leftJoin: selectLeftJoinMock });
+  const selectMock = vi.fn().mockReturnValue({ from: selectFromMock });
 
-    // queryBlobDetail also calls .limit(1) after .groupBy()
-    const selectLimitMock = vi.fn();
-    // Default: groupBy returns { limit: selectLimitMock }
-    selectGroupByMock.mockReturnValue({ limit: selectLimitMock });
+  // queryBlobDetail also calls .limit(1) after .groupBy()
+  const selectLimitMock = vi.fn();
+  // Default: groupBy returns { limit: selectLimitMock }
+  selectGroupByMock.mockReturnValue({ limit: selectLimitMock });
 
-    const updateSetMock = vi.fn();
-    const updateWhereMock = vi.fn();
-    const updateReturningMock = vi.fn();
-    const updateMock = vi.fn().mockReturnValue({
-      set: updateSetMock.mockReturnValue({
-        where: updateWhereMock.mockReturnValue({
-          returning: updateReturningMock,
-        }),
+  const updateSetMock = vi.fn();
+  const updateWhereMock = vi.fn();
+  const updateReturningMock = vi.fn();
+  const updateMock = vi.fn().mockReturnValue({
+    set: updateSetMock.mockReturnValue({
+      where: updateWhereMock.mockReturnValue({
+        returning: updateReturningMock,
       }),
-    });
+    }),
+  });
 
-    return {
-      selectMock,
-      selectGroupByMock,
-      selectLimitMock,
-      updateMock,
-      updateSetMock,
-      updateWhereMock,
-      updateReturningMock,
-    };
-  },
-);
+  return {
+    selectMock,
+    selectGroupByMock,
+    selectLimitMock,
+    updateMock,
+    updateSetMock,
+    updateWhereMock,
+    updateReturningMock,
+  };
+});
 
 vi.mock('./index', () => ({
   db: {

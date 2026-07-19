@@ -118,10 +118,7 @@ export const FEEDBACK_RATE_LIMIT = 5;
  * Throws with a user-friendly message if the limit is reached.
  * Returns the current count otherwise.
  */
-export async function checkFeedbackRateLimit(
-  submitterProfileId: string | null,
-  ip: string | null,
-): Promise<number> {
+export async function checkFeedbackRateLimit(submitterProfileId: string | null, ip: string | null): Promise<number> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
   let count: number;
@@ -130,24 +127,14 @@ export async function checkFeedbackRateLimit(
     const rows = await db
       .select({ count: sql<number>`count(*)` })
       .from(feedback)
-      .where(
-        and(
-          eq(feedback.submitterProfileId, submitterProfileId),
-          gte(feedback.createdAt, oneHourAgo),
-        ),
-      );
+      .where(and(eq(feedback.submitterProfileId, submitterProfileId), gte(feedback.createdAt, oneHourAgo)));
     count = Number(rows[0]?.count ?? 0);
   } else if (ip) {
     // Anonymous user — count by IP
     const rows = await db
       .select({ count: sql<number>`count(*)` })
       .from(feedback)
-      .where(
-        and(
-          eq(feedback.submitterIp, ip),
-          gte(feedback.createdAt, oneHourAgo),
-        ),
-      );
+      .where(and(eq(feedback.submitterIp, ip), gte(feedback.createdAt, oneHourAgo)));
     count = Number(rows[0]?.count ?? 0);
   } else {
     // No identity to rate-limit by — allow the submission
@@ -156,7 +143,7 @@ export async function checkFeedbackRateLimit(
 
   if (count >= FEEDBACK_RATE_LIMIT) {
     throw new Error(
-      'You\'ve submitted a lot of feedback recently. Please wait a bit before sending more — we want to make sure every submission gets proper attention.',
+      "You've submitted a lot of feedback recently. Please wait a bit before sending more — we want to make sure every submission gets proper attention.",
     );
   }
 

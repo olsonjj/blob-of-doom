@@ -1,4 +1,5 @@
 dist/
 node_modules/
+.pi-subagents/
 src/routeTree.gen.ts
 pnpm-lock.yaml
