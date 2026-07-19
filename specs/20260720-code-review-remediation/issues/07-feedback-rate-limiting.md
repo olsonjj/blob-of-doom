@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (consolidation)
 
-**Status:** in-progress
+**Status:** complete
 
 - [x] More than 5 feedback submissions per user (or per IP for anonymous users) per hour are rejected
 - [x] The rate limit error message is user-friendly (not a stack trace or generic "Invalid input")

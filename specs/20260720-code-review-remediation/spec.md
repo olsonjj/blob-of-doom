@@ -1,7 +1,7 @@
 # Implementation Spec — Code Review Remediation
 
 **Based on:** Independent code review (2025-07-20) — security, code quality/architecture, and config/supply-chain passes  
-**Status:** In progress — 01, 02, 03, 04, 05, 07 complete  
+**Status:** In progress — 01, 02, 03, 04, 05, 06, 07 complete  
 **Tickets:** [`issues/`](issues/) — 10 vertical slices, numbered in dependency order
 
 ---

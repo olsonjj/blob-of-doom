@@ -6,8 +6,8 @@
 
 **Status:** complete
 
-- [ ] All five SWR error renders in the admin dashboard show `error.message` (or a fallback string) instead of the raw Error object
-- [ ] Each error state includes a working retry button
-- [ ] Error banner styling is consistent across all four tabs and the storage section
-- [ ] A shared `ErrorBanner` component is extracted rather than copy-pasting the error-rendering pattern five times
-- [ ] Existing admin dashboard behavior is unchanged when fetches succeed
+- [x] All five SWR error renders in the admin dashboard show `error.message` (or a fallback string) instead of the raw Error object
+- [x] Each error state includes a working retry button
+- [x] Error banner styling is consistent across all four tabs and the storage section
+- [x] A shared `ErrorBanner` component is extracted rather than copy-pasting the error-rendering pattern five times
+- [x] Existing admin dashboard behavior is unchanged when fetches succeed

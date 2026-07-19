@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (consolidation)
 
-**Status:** in-progress
+**Status:** complete
 
 - [x] Submitting a rating for a deleted or flagged blob returns a "Blob not found" error instead of succeeding
 - [x] Incrementing the view count for a deleted or flagged blob is a no-op (the UPDATE's WHERE clause excludes hidden blobs)

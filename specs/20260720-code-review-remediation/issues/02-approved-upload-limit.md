@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (consolidation)
 
-**Status:** ready-for-agent
+**Status:** complete
 
 - [x] `checkUploadLimit()` reads `profile.approved` and grants 10/day for approved users, 1/day for unapproved
 - [x] Admins still bypass the limit entirely (no regression)

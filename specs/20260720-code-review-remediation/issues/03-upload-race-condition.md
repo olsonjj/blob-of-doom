@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (consolidation)
 
-**Status:** ready-for-agent
+**Status:** complete
 
 - [x] Daily upload count uses an atomic increment (`SET upload_count_today = upload_count_today + 1`) instead of SELECT-then-UPDATE
 - [x] Concurrent requests from the same user cannot both succeed when only one slot remains

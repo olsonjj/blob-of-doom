@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** complete
 
 - [x] All modules use the lazy `db` Proxy from `src/db/index.ts` — no more `getDb()`/`getSchema()`/`getDrizzleEq()` ceremony or inline dynamic imports for DB access
 - [x] A single `requireAdmin()` (throws, for server functions) and `checkIsAdmin()` (returns boolean, for route guards) live in `auth-guards.func.ts` — duplicates in `admin.func.ts` and `feedback.func.ts` are removed
