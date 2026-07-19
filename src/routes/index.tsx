@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import useSWR from 'swr';
 
 import { BlobCard } from '../components/BlobCard';
+import { FeedbackForm } from '../components/FeedbackForm';
 import { fetchFeatured } from '../db/featured.func';
 
 export const Route = createFileRoute('/')({ component: Home });
@@ -64,6 +65,9 @@ function Home() {
           </div>
         </div>
       </div>
+
+      {/* ── Feedback Form ──────────────────────────────────────────────── */}
+      <FeedbackForm />
 
       {/* ── Featured Feed ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 pb-24 text-center">

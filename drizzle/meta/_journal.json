@@ -22,6 +22,20 @@
       "when": 1784348618549,
       "tag": "0002_add_flagged_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784478150746,
+      "tag": "0003_smart_harpoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784479860925,
+      "tag": "0004_simple_meteorite",
+      "breakpoints": true
     }
   ]
 }

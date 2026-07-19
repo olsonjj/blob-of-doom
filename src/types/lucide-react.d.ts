@@ -105,3 +105,9 @@ declare module 'lucide-react/dist/esm/icons/arrow-left' {
   const icon: LucideIcon;
   export default icon;
 }
+
+declare module 'lucide-react/dist/esm/icons/message-square' {
+  import { type LucideIcon } from 'lucide-react';
+  const icon: LucideIcon;
+  export default icon;
+}

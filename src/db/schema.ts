@@ -37,6 +37,20 @@ export const blobs = pgTable('blobs', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// ── Feedback ───────────────────────────────────────────────────────────────
+// Site feedback submissions (bug reports and feature requests).
+
+export const feedback = pgTable('feedback', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  category: text('category').notNull(), // 'bug' | 'feature'
+  message: text('message').notNull(),
+  email: text('email'), // nullable — populated from Clerk if signed in, or optional anonymous field
+  submitterProfileId: text('submitter_profile_id').references(() => profiles.clerkUserId), // null for anonymous
+  submitterProvider: text('submitter_provider'), // e.g. 'google', 'github', 'discord' — null for anonymous
+  resolved: integer('resolved').notNull().default(0), // 0 = open, 1 = resolved
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // ── Ratings ─────────────────────────────────────────────────────────────────
 // Doom Scale ratings (1–5 hexagons). One rating per user per blob.
 

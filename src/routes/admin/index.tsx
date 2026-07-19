@@ -6,6 +6,7 @@ import Eye from 'lucide-react/dist/esm/icons/eye';
 import Flag from 'lucide-react/dist/esm/icons/flag';
 import HardDrive from 'lucide-react/dist/esm/icons/hard-drive';
 import Image from 'lucide-react/dist/esm/icons/image';
+import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Shield from 'lucide-react/dist/esm/icons/shield';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
@@ -30,6 +31,12 @@ import {
   unbanUser,
 } from '../../db/admin.func';
 import { requireAdmin } from '../../db/auth-guards.func';
+import {
+  deleteFeedback,
+  type FeedbackRow,
+  getFeedback,
+  resolveFeedback,
+} from '../../db/feedback.func';
 import { fetchGallery, type GalleryBlob } from '../../db/gallery.func';
 
 export const Route = createFileRoute('/admin/')({
@@ -462,9 +469,97 @@ function FlaggedBlobCard({
   );
 }
 
+// ── Feedback Row ───────────────────────────────────────────────────────────
+
+function FeedbackRow({
+  item,
+  onResolve,
+  onDelete,
+}: {
+  item: FeedbackRow;
+  onResolve: (feedbackId: number) => void;
+  onDelete: (feedbackId: number) => void;
+}) {
+  const isResolved = item.resolved === 1;
+  const categoryBadge =
+    item.category === 'bug'
+      ? { label: 'Bug', className: 'bg-doom-500/10 text-doom-400 border-doom-500/30' }
+      : { label: 'Feature', className: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
+
+  return (
+    <div
+      className={`bg-noir-900 border rounded-xl p-4 transition-colors ${
+        isResolved
+          ? 'border-noir-800 opacity-60'
+          : 'border-noir-700 bg-noir-900/80 ring-1 ring-inset ring-yellow-500/5'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span
+              className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full border ${categoryBadge.className}`}
+            >
+              {categoryBadge.label}
+            </span>
+            {isResolved && (
+              <span className="inline-flex text-xs font-medium px-2 py-0.5 rounded-full border bg-green-500/10 text-green-400 border-green-500/30">
+                Resolved
+              </span>
+            )}
+            <span className="text-xs text-noir-500">
+              {new Date(item.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </span>
+          </div>
+          <p className={`text-sm ${isResolved ? 'text-noir-400' : 'text-noir-200'}`}>{item.message}</p>
+          <p className="text-xs text-noir-500 mt-1">
+            {item.submitterProfileId
+              ? item.email
+                ? item.submitterProvider
+                  ? `${item.email} (via ${item.submitterProvider.charAt(0).toUpperCase() + item.submitterProvider.slice(1)})`
+                  : item.email
+                : 'Signed-in user'
+              : item.email
+                ? item.email
+                : 'Anonymous'}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => onResolve(item.id)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+              isResolved
+                ? 'text-green-400 bg-green-500/10 hover:bg-green-500/20'
+                : 'text-noir-400 hover:text-green-400 hover:bg-green-500/10'
+            }`}
+            title={isResolved ? 'Mark unresolved' : 'Mark resolved'}
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            {isResolved ? 'Unresolve' : 'Resolve'}
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-noir-400 hover:text-doom-400 hover:bg-doom-500/10 rounded-lg transition-colors cursor-pointer"
+            title="Delete feedback"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 
-type Tab = 'users' | 'blobs' | 'flagged';
+type Tab = 'users' | 'blobs' | 'flagged' | 'feedback';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('users');
@@ -503,6 +598,14 @@ function AdminDashboard() {
     isLoading: flaggedLoading,
     mutate: mutateFlagged,
   } = useSWR(flaggedEnabled ? 'admin-flagged' : null, () => getFlaggedBlobs());
+
+  // Feedback — always fetched so the tab badge shows immediately
+  const {
+    data: feedbackItems = [],
+    error: feedbackError,
+    isLoading: feedbackLoading,
+    mutate: mutateFeedback,
+  } = useSWR('admin-feedback', () => getFeedback());
 
   // Confirmation modal state
   const [confirm, setConfirm] = useState<{
@@ -610,6 +713,33 @@ function AdminDashboard() {
     });
   };
 
+  const handleResolveFeedback = (feedbackId: number) => {
+    setConfirm({
+      title: 'Toggle Resolved',
+      message: 'Toggle the resolved status of this feedback submission.',
+      confirmLabel: 'Toggle',
+      variant: 'warning',
+      action: async () => {
+        await resolveFeedback({ data: { feedbackId } });
+        await mutateFeedback();
+      },
+    });
+  };
+
+  const handleDeleteFeedback = (feedbackId: number) => {
+    const item = feedbackItems.find((f) => f.id === feedbackId);
+    setConfirm({
+      title: 'Delete Feedback',
+      message: `Permanently delete this ${item?.category === 'bug' ? 'bug report' : 'feature request'}? This action cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      action: async () => {
+        await deleteFeedback({ data: { feedbackId } });
+        await mutateFeedback();
+      },
+    });
+  };
+
   const executeConfirm = async () => {
     if (!confirm) return;
     setActionError(null);
@@ -641,6 +771,7 @@ function AdminDashboard() {
             void mutateStorage();
             void mutateBlobs();
             if (activeTab === 'flagged') void mutateFlagged();
+            if (activeTab === 'feedback') void mutateFeedback();
           }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
         >
@@ -664,6 +795,7 @@ function AdminDashboard() {
             ['users', 'Users', Users],
             ['blobs', 'Blobs', Image],
             ['flagged', 'Flagged', Flag],
+            ['feedback', 'Feedback', MessageSquare],
           ] as const
         ).map(([tab, label, Icon]) => (
           <button
@@ -678,6 +810,11 @@ function AdminDashboard() {
             {tab === 'flagged' && flaggedBlobs.length > 0 && (
               <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-doom-500 text-white rounded-full">
                 {flaggedBlobs.length}
+              </span>
+            )}
+            {tab === 'feedback' && feedbackItems.filter((f) => f.resolved === 0).length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 text-xs font-bold bg-doom-500 text-white rounded-full">
+                {feedbackItems.filter((f) => f.resolved === 0).length}
               </span>
             )}
           </button>
@@ -871,6 +1008,72 @@ function AdminDashboard() {
                   onReject={handleRejectFlagged}
                 />
               ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Feedback ──────────────────────────────────────────────────── */}
+      {activeTab === 'feedback' && (
+        <section>
+          <h2 className="text-lg font-semibold text-noir-200 mb-4 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-noir-400" />
+            Feedback
+            {!feedbackLoading && (
+              <span className="text-sm font-normal text-noir-500 ml-1">
+                ({feedbackItems.length} total, {feedbackItems.filter((f) => f.resolved === 0).length} open)
+              </span>
+            )}
+          </h2>
+
+          {feedbackError ? (
+            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
+              <p className="text-sm text-doom-300 mb-3">{feedbackError}</p>
+              <button
+                onClick={() => void mutateFeedback()}
+                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : feedbackLoading ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
+              <div className="p-4 animate-pulse space-y-3">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div key={i} className="h-16 bg-noir-800 rounded" />
+                ))}
+              </div>
+            </div>
+          ) : feedbackItems.length === 0 ? (
+            <div className="bg-noir-900 border border-noir-700 rounded-xl p-8 text-center">
+              <MessageSquare className="w-10 h-10 text-noir-600 mx-auto mb-3" />
+              <p className="text-noir-400">No feedback submissions yet.</p>
+              <p className="text-sm text-noir-500 mt-1">Feedback from the home page will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Unresolved first */}
+              {feedbackItems
+                .filter((f) => f.resolved === 0)
+                .map((item) => (
+                  <FeedbackRow
+                    key={item.id}
+                    item={item}
+                    onResolve={handleResolveFeedback}
+                    onDelete={handleDeleteFeedback}
+                  />
+                ))}
+              {/* Resolved below */}
+              {feedbackItems
+                .filter((f) => f.resolved === 1)
+                .map((item) => (
+                  <FeedbackRow
+                    key={item.id}
+                    item={item}
+                    onResolve={handleResolveFeedback}
+                    onDelete={handleDeleteFeedback}
+                  />
+                ))}
             </div>
           )}
         </section>
