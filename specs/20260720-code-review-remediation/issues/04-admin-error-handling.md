@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (consolidation)
 
-**Status:** ready-for-agent
+**Status:** complete
 
 - [ ] All five SWR error renders in the admin dashboard show `error.message` (or a fallback string) instead of the raw Error object
 - [ ] Each error state includes a working retry button

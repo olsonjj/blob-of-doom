@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** complete
 
 - [ ] `vercel.json` includes `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy` headers
 - [ ] At least 3 of the 6 disabled `eslint-plugin-security` rules are enabled, with rationale documented for any that remain off
