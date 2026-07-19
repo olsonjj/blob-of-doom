@@ -15,6 +15,7 @@ import XCircle from 'lucide-react/dist/esm/icons/x-circle';
 import { memo, useState } from 'react';
 import useSWR from 'swr';
 
+import { ErrorBanner } from '../../components/ErrorBanner';
 import {
   type AdminUser,
   approveFlaggedBlob,
@@ -31,12 +32,7 @@ import {
   unbanUser,
 } from '../../db/admin.func';
 import { requireAdminGuard } from '../../db/auth-guards.func';
-import {
-  deleteFeedback,
-  type FeedbackRow,
-  getFeedback,
-  resolveFeedback,
-} from '../../db/feedback.func';
+import { deleteFeedback, type FeedbackRow, getFeedback, resolveFeedback } from '../../db/feedback.func';
 import { fetchGallery, type GalleryBlob } from '../../db/gallery.func';
 
 export const Route = createFileRoute('/admin/')({
@@ -489,9 +485,7 @@ function FeedbackRow({
   return (
     <div
       className={`bg-noir-900 border rounded-xl p-4 transition-colors ${
-        isResolved
-          ? 'border-noir-800 opacity-60'
-          : 'border-noir-700 bg-noir-900/80 ring-1 ring-inset ring-yellow-500/5'
+        isResolved ? 'border-noir-800 opacity-60' : 'border-noir-700 bg-noir-900/80 ring-1 ring-inset ring-yellow-500/5'
       }`}
     >
       <div className="flex items-start justify-between gap-4">
@@ -829,15 +823,10 @@ function AdminDashboard() {
             Storage
           </h2>
           {storageError ? (
-            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
-              <p className="text-sm text-doom-300 mb-3">{storageError}</p>
-              <button
-                onClick={() => void mutateStorage()}
-                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
-              >
-                Retry
-              </button>
-            </div>
+            <ErrorBanner
+              message={storageError instanceof Error ? storageError.message : 'Failed to load storage stats'}
+              onRetry={() => void mutateStorage()}
+            />
           ) : (
             <StorageCards stats={storageStats} loading={storageLoading} />
           )}
@@ -854,9 +843,10 @@ function AdminDashboard() {
           </h2>
 
           {usersError ? (
-            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4 text-sm text-doom-300">
-              {usersError}
-            </div>
+            <ErrorBanner
+              message={usersError instanceof Error ? usersError.message : 'Failed to load users'}
+              onRetry={() => void mutateUsers()}
+            />
           ) : usersLoading ? (
             <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
               <div className="p-4 animate-pulse space-y-3">
@@ -913,15 +903,10 @@ function AdminDashboard() {
           </h2>
 
           {blobsError ? (
-            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
-              <p className="text-sm text-doom-300 mb-3">{blobsError}</p>
-              <button
-                onClick={() => void mutateBlobs()}
-                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
-              >
-                Retry
-              </button>
-            </div>
+            <ErrorBanner
+              message={blobsError instanceof Error ? blobsError.message : 'Failed to load blobs'}
+              onRetry={() => void mutateBlobs()}
+            />
           ) : blobsLoading ? (
             <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
               <div className="p-4 animate-pulse space-y-3">
@@ -975,15 +960,10 @@ function AdminDashboard() {
           </h2>
 
           {flaggedError ? (
-            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
-              <p className="text-sm text-doom-300 mb-3">{flaggedError}</p>
-              <button
-                onClick={() => void mutateFlagged()}
-                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
-              >
-                Retry
-              </button>
-            </div>
+            <ErrorBanner
+              message={flaggedError instanceof Error ? flaggedError.message : 'Failed to load flagged blobs'}
+              onRetry={() => void mutateFlagged()}
+            />
           ) : flaggedLoading ? (
             <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
               <div className="p-4 animate-pulse space-y-3">
@@ -1027,15 +1007,10 @@ function AdminDashboard() {
           </h2>
 
           {feedbackError ? (
-            <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
-              <p className="text-sm text-doom-300 mb-3">{feedbackError}</p>
-              <button
-                onClick={() => void mutateFeedback()}
-                className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
-              >
-                Retry
-              </button>
-            </div>
+            <ErrorBanner
+              message={feedbackError instanceof Error ? feedbackError.message : 'Failed to load feedback'}
+              onRetry={() => void mutateFeedback()}
+            />
           ) : feedbackLoading ? (
             <div className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden">
               <div className="p-4 animate-pulse space-y-3">

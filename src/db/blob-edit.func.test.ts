@@ -2,13 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const {
-  selectMock,
-  selectLimitMock,
-  updateMock,
-  updateSetMock,
-  updateWhereMock,
-} = vi.hoisted(() => {
+const { selectMock, selectLimitMock, updateMock, updateSetMock, updateWhereMock } = vi.hoisted(() => {
   const selectFromMock = vi.fn();
   const selectWhereMock = vi.fn();
   const selectLimitMock = vi.fn();
@@ -100,9 +94,7 @@ describe('updateBlobRecord', () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(updateSetMock).toHaveBeenCalledWith(
-      expect.objectContaining({ description: null }),
-    );
+    expect(updateSetMock).toHaveBeenCalledWith(expect.objectContaining({ description: null }));
   });
 
   it('throws when blob not found', async () => {
@@ -110,7 +102,14 @@ describe('updateBlobRecord', () => {
 
     await expect(
       updateBlobRecord(
-        { blobId: 999, title: 'X', description: null, dateOccurred: '2025-01-01', filamentType: 'PLA', machineUsed: 'X' },
+        {
+          blobId: 999,
+          title: 'X',
+          description: null,
+          dateOccurred: '2025-01-01',
+          filamentType: 'PLA',
+          machineUsed: 'X',
+        },
         'user_1',
       ),
     ).rejects.toThrow('Blob not found');

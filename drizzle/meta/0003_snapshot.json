@@ -120,12 +120,8 @@
           "name": "blobs_uploader_profile_id_profiles_clerk_user_id_fk",
           "tableFrom": "blobs",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "uploader_profile_id"
-          ],
-          "columnsTo": [
-            "clerk_user_id"
-          ],
+          "columnsFrom": ["uploader_profile_id"],
+          "columnsTo": ["clerk_user_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -202,12 +198,8 @@
           "name": "feedback_submitter_profile_id_profiles_clerk_user_id_fk",
           "tableFrom": "feedback",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "submitter_profile_id"
-          ],
-          "columnsTo": [
-            "clerk_user_id"
-          ],
+          "columnsFrom": ["submitter_profile_id"],
+          "columnsTo": ["clerk_user_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -360,12 +352,8 @@
           "name": "ratings_blob_id_blobs_id_fk",
           "tableFrom": "ratings",
           "tableTo": "blobs",
-          "columnsFrom": [
-            "blob_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["blob_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -373,12 +361,8 @@
           "name": "ratings_rater_profile_id_profiles_clerk_user_id_fk",
           "tableFrom": "ratings",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "rater_profile_id"
-          ],
-          "columnsTo": [
-            "clerk_user_id"
-          ],
+          "columnsFrom": ["rater_profile_id"],
+          "columnsTo": ["clerk_user_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

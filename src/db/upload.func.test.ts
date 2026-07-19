@@ -68,7 +68,13 @@ vi.mock('sharp', () => {
   return { default: mockSharp };
 });
 
-import { checkUploadLimit, incrementUploadCount, processImageVariants, todayDateString, validateUploadInput } from './upload.func';
+import {
+  checkUploadLimit,
+  incrementUploadCount,
+  processImageVariants,
+  todayDateString,
+  validateUploadInput,
+} from './upload.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -263,7 +269,11 @@ describe('checkUploadLimit', () => {
       },
     ]);
 
-    await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({ currentCount: 0, lastDate: null, limit: 1 });
+    await expect(checkUploadLimit('user_1', '2024-12-02')).resolves.toEqual({
+      currentCount: 0,
+      lastDate: null,
+      limit: 1,
+    });
   });
 
   it('throws when upload limit reached (same day, count >= 1)', async () => {
@@ -338,7 +348,9 @@ describe('checkUploadLimit', () => {
       },
     ]);
 
-    await expect(checkUploadLimit('user_1', '2024-12-02')).rejects.toThrow('Upload limit reached. You can upload 10 blob(s) per day.');
+    await expect(checkUploadLimit('user_1', '2024-12-02')).rejects.toThrow(
+      'Upload limit reached. You can upload 10 blob(s) per day.',
+    );
   });
 
   it('grants unapproved users a limit of 1/day', async () => {

@@ -14,18 +14,18 @@ A three-pass independent review of ~7.3k LOC across TanStack Start (React 19 SSR
 
 ## Tickets
 
-| # | Ticket | Blocked by | Description |
-|---|--------|-----------|-------------|
-| 01 | [Codebase consolidation](issues/01-codebase-consolidation.md) | — | Prefactor: one DB access pattern, one admin guard, one validation approach |
-| 02 | [Approved upload limit](issues/02-approved-upload-limit.md) | 01 ✅ | Approved users get 10 uploads/day; unapproved get 1 |
-| 03 | [Upload race condition](issues/03-upload-race-condition.md) | 01 ✅ | Atomic daily upload count — concurrent requests can't bypass the cap |
-| 04 | [Admin error handling](issues/04-admin-error-handling.md) | 01 | Admin dashboard shows error messages instead of crashing on fetch failures |
-| 05 | [Production hardening](issues/05-production-hardening.md) | — | Security headers, CI, pinned deps, committable `.env.example` |
-| 06 | [Moderation gating](issues/06-moderation-gating.md) | 01 | Can't rate/view-count hidden blobs; consistent delete behavior |
-| 07 | [Feedback rate limiting](issues/07-feedback-rate-limiting.md) | 01 | 5 submissions/user/hour max on feedback |
-| 08 | [Database indexes](issues/08-database-indexes.md) | — | Indexes on filtered/joined/sorted columns |
-| 09 | [Admin decomposition](issues/09-admin-decomposition.md) | 04 | Split 1,094-line admin god-file into focused components |
-| 10 | [Security boundary tests](issues/10-security-boundary-tests.md) | 01, 02, 03, 06 | Tests for admin guards, ownership, rating upserts, upload rate limiting |
+| #   | Ticket                                                          | Blocked by     | Description                                                                |
+| --- | --------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------- |
+| 01  | [Codebase consolidation](issues/01-codebase-consolidation.md)   | —              | Prefactor: one DB access pattern, one admin guard, one validation approach |
+| 02  | [Approved upload limit](issues/02-approved-upload-limit.md)     | 01 ✅          | Approved users get 10 uploads/day; unapproved get 1                        |
+| 03  | [Upload race condition](issues/03-upload-race-condition.md)     | 01 ✅          | Atomic daily upload count — concurrent requests can't bypass the cap       |
+| 04  | [Admin error handling](issues/04-admin-error-handling.md)       | 01             | Admin dashboard shows error messages instead of crashing on fetch failures |
+| 05  | [Production hardening](issues/05-production-hardening.md)       | —              | Security headers, CI, pinned deps, committable `.env.example`              |
+| 06  | [Moderation gating](issues/06-moderation-gating.md)             | 01             | Can't rate/view-count hidden blobs; consistent delete behavior             |
+| 07  | [Feedback rate limiting](issues/07-feedback-rate-limiting.md)   | 01             | 5 submissions/user/hour max on feedback                                    |
+| 08  | [Database indexes](issues/08-database-indexes.md)               | —              | Indexes on filtered/joined/sorted columns                                  |
+| 09  | [Admin decomposition](issues/09-admin-decomposition.md)         | 04             | Split 1,094-line admin god-file into focused components                    |
+| 10  | [Security boundary tests](issues/10-security-boundary-tests.md) | 01, 02, 03, 06 | Tests for admin guards, ownership, rating upserts, upload rate limiting    |
 
 ---
 
@@ -48,11 +48,11 @@ A three-pass independent review of ~7.3k LOC across TanStack Start (React 19 SSR
 
 ## Design Decisions Needed
 
-| Ticket | Decision |
-|--------|----------|
-| 02 | Enforce the `approved` flag (10 uploads/day) or remove it entirely? |
-| 03 | Atomic increment, `SELECT ... FOR UPDATE`, or DB-level unique constraint? |
-| 06 | Genuine soft-delete (keep files, recoverable) or hard-delete (remove DB row + files)? |
+| Ticket | Decision                                                                              |
+| ------ | ------------------------------------------------------------------------------------- |
+| 02     | Enforce the `approved` flag (10 uploads/day) or remove it entirely?                   |
+| 03     | Atomic increment, `SELECT ... FOR UPDATE`, or DB-level unique constraint?             |
+| 06     | Genuine soft-delete (keep files, recoverable) or hard-delete (remove DB row + files)? |
 
 ---
 

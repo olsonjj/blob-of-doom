@@ -11,11 +11,9 @@ import { checkAdminStatus } from '../db/admin-check.func';
  */
 export function AdminNavLink() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { data: isAdmin = false } = useSWR(
-    isLoaded && isSignedIn ? 'admin-status' : null,
-    () => checkAdminStatus(),
-    { revalidateOnFocus: false },
-  );
+  const { data: isAdmin = false } = useSWR(isLoaded && isSignedIn ? 'admin-status' : null, () => checkAdminStatus(), {
+    revalidateOnFocus: false,
+  });
 
   if (!isAdmin) return null;
 

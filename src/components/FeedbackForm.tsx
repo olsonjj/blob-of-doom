@@ -51,9 +51,7 @@ export function FeedbackForm() {
   if (formState === 'submitted') {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 text-center">
-        <p className="text-[#b6e600] text-sm font-semibold">
-          Thanks! Your feedback has been submitted.
-        </p>
+        <p className="text-[#b6e600] text-sm font-semibold">Thanks! Your feedback has been submitted.</p>
       </div>
     );
   }
@@ -78,7 +76,12 @@ export function FeedbackForm() {
       <div className="bg-noir-900 border border-noir-700 rounded-xl p-6">
         <h3 className="text-lg font-bold text-noir-100 mb-4">Submit Feedback</h3>
 
-        <form onSubmit={(e: React.FormEvent) => { void handleSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e: React.FormEvent) => {
+            void handleSubmit(e);
+          }}
+          className="space-y-4"
+        >
           {/* Category */}
           <div>
             <label htmlFor="feedback-category" className="block text-sm font-medium text-noir-300 mb-1.5">
@@ -111,9 +114,7 @@ export function FeedbackForm() {
               required
             />
             <div className="flex justify-between mt-1">
-              <span className="text-xs text-noir-500">
-                {message.length}/500
-              </span>
+              <span className="text-xs text-noir-500">{message.length}/500</span>
             </div>
           </div>
 
@@ -142,9 +143,7 @@ export function FeedbackForm() {
           )}
 
           {/* Error */}
-          {error && (
-            <p className="text-doom-400 text-sm font-medium">{error}</p>
-          )}
+          {error && <p className="text-doom-400 text-sm font-medium">{error}</p>}
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-1">

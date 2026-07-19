@@ -51,4 +51,4 @@ export const BlobCard = memo(function BlobCard({ blob }: { blob: GalleryBlob }) 
       </div>
     </article>
   );
-})
+});

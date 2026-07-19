@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import ArrowUpDown from 'lucide-react/dist/esm/icons/arrow-up-down';
 import Calendar from 'lucide-react/dist/esm/icons/calendar';
 import Hexagon from 'lucide-react/dist/esm/icons/hexagon';
-import { memo, useState,useTransition } from 'react';
+import { memo, useState, useTransition } from 'react';
 import useSWR from 'swr';
 
 import { BlobCard } from '../../components/BlobCard';
@@ -15,9 +15,8 @@ function Gallery() {
   const [order, setOrder] = useState<SortOrder>('desc');
   const [isPending, startTransition] = useTransition();
 
-  const { data: blobs = [], isLoading: loading } = useSWR(
-    ['gallery', sort, order],
-    () => fetchGallery({ data: { sort, order } }),
+  const { data: blobs = [], isLoading: loading } = useSWR(['gallery', sort, order], () =>
+    fetchGallery({ data: { sort, order } }),
   );
 
   const toggleSort = (field: SortField) => {

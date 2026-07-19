@@ -2,7 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const { insertValuesMock, insertReturningMock, insertMock, selectMock, selectFromMock, selectOrderByMock, updateMock, updateSetMock, updateWhereMock, updateReturningMock, deleteMock, deleteWhereMock, deleteReturningMock } = vi.hoisted(() => {
+const {
+  insertValuesMock,
+  insertReturningMock,
+  insertMock,
+  selectMock,
+  selectFromMock,
+  selectOrderByMock,
+  updateMock,
+  updateSetMock,
+  updateWhereMock,
+  updateReturningMock,
+  deleteMock,
+  deleteWhereMock,
+  deleteReturningMock,
+} = vi.hoisted(() => {
   const insertValuesMock = vi.fn();
   const insertReturningMock = vi.fn();
   const insertMock = vi.fn().mockReturnValue({
@@ -34,7 +48,21 @@ const { insertValuesMock, insertReturningMock, insertMock, selectMock, selectFro
     }),
   });
 
-  return { insertValuesMock, insertReturningMock, insertMock, selectMock, selectFromMock, selectOrderByMock, updateMock, updateSetMock, updateWhereMock, updateReturningMock, deleteMock, deleteWhereMock, deleteReturningMock };
+  return {
+    insertValuesMock,
+    insertReturningMock,
+    insertMock,
+    selectMock,
+    selectFromMock,
+    selectOrderByMock,
+    updateMock,
+    updateSetMock,
+    updateWhereMock,
+    updateReturningMock,
+    deleteMock,
+    deleteWhereMock,
+    deleteReturningMock,
+  };
 });
 
 vi.mock('./index', () => ({
@@ -51,20 +79,28 @@ vi.mock('@clerk/tanstack-react-start/server', () => ({
   clerkClient: vi.fn(),
 }));
 
-import { insertFeedback, queryAllFeedback, removeFeedback, toggleResolved, validateFeedbackInput } from './feedback.func';
+import {
+  insertFeedback,
+  queryAllFeedback,
+  removeFeedback,
+  toggleResolved,
+  validateFeedbackInput,
+} from './feedback.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function makeFeedbackRow(overrides: Partial<{
-  id: number;
-  category: string;
-  message: string;
-  email: string | null;
-  submitterProfileId: string | null;
-  submitterProvider: string | null;
-  resolved: number;
-  createdAt: Date;
-}> = {}) {
+function makeFeedbackRow(
+  overrides: Partial<{
+    id: number;
+    category: string;
+    message: string;
+    email: string | null;
+    submitterProfileId: string | null;
+    submitterProvider: string | null;
+    resolved: number;
+    createdAt: Date;
+  }> = {},
+) {
   return {
     id: overrides.id ?? 1,
     category: overrides.category ?? 'bug',
