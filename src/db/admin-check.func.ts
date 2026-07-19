@@ -1,5 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 
+import { checkIsAdmin } from './auth-guards.func';
+
 /**
  * Lightweight server function: returns whether the current user is an admin.
  *
@@ -12,15 +14,5 @@ export const checkAdminStatus = createServerFn({ method: 'GET' }).handler(async 
   const { userId } = await auth();
   if (!userId) return false;
 
-  const { db } = await import('./index');
-  const { profiles } = await import('./schema');
-  const { eq } = await import('drizzle-orm');
-
-  const [profile] = await db
-    .select({ isAdmin: profiles.isAdmin })
-    .from(profiles)
-    .where(eq(profiles.clerkUserId, userId))
-    .limit(1);
-
-  return profile?.isAdmin === 1;
+  return checkIsAdmin(userId);
 });

@@ -30,7 +30,7 @@ import {
   unapproveUser,
   unbanUser,
 } from '../../db/admin.func';
-import { requireAdmin } from '../../db/auth-guards.func';
+import { requireAdminGuard } from '../../db/auth-guards.func';
 import {
   deleteFeedback,
   type FeedbackRow,
@@ -40,7 +40,7 @@ import {
 import { fetchGallery, type GalleryBlob } from '../../db/gallery.func';
 
 export const Route = createFileRoute('/admin/')({
-  beforeLoad: async () => await requireAdmin(),
+  beforeLoad: async () => await requireAdminGuard(),
   component: AdminDashboard,
 });
 

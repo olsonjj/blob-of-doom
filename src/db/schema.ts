@@ -33,7 +33,7 @@ export const blobs = pgTable('blobs', {
   viewCount: integer('view_count').notNull().default(0),
   deleted: integer('deleted').notNull().default(0), // 0 = active, 1 = soft-deleted
   flagged: integer('flagged').notNull().default(0), // 0 = clean, 1 = flagged for review
-  moderationScores: jsonb('moderation_scores'), // SightEngine moderation results
+  moderationScores: jsonb('moderation_scores').$type<Record<string, number>>(), // SightEngine moderation results
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

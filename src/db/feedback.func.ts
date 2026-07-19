@@ -1,4 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
+import { desc, eq, sql } from 'drizzle-orm';
+
+import { requireAdmin } from './auth-guards.func';
+import { db } from './index';
+import { feedback } from './schema';
+import { assertNumber, assertObject } from './validation';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,9 +87,6 @@ export async function insertFeedback(
   submitterProfileId: string | null,
   submitterProvider: string | null,
 ): Promise<FeedbackRow> {
-  const { db } = await import('./index');
-  const { feedback } = await import('./schema');
-
   const [row] = await db
     .insert(feedback)
     .values({
@@ -95,7 +98,7 @@ export async function insertFeedback(
     })
     .returning();
 
-  return row as FeedbackRow;
+  return row;
 }
 
 // ── Server function ─────────────────────────────────────────────────────────
@@ -139,43 +142,16 @@ export const submitFeedback = createServerFn({ method: 'POST' })
     return insertFeedback(data.category, data.message, email, submitterProfileId, submitterProvider);
   });
 
-// ── Admin auth helper ───────────────────────────────────────────────────────
-
-async function requireAdmin(): Promise<string> {
-  const { auth } = await import('@clerk/tanstack-react-start/server');
-  const { userId } = await auth();
-  if (!userId) throw new Error('Not authenticated');
-
-  const { db } = await import('./index');
-  const { profiles } = await import('./schema');
-  const { eq } = await import('drizzle-orm');
-  const [profile] = await db
-    .select({ isAdmin: profiles.isAdmin })
-    .from(profiles)
-    .where(eq(profiles.clerkUserId, userId))
-    .limit(1);
-  if (profile?.isAdmin !== 1) throw new Error('Admin access required');
-  return userId;
-}
-
 // ── Query all feedback (extracted for testability) ──────────────────────────
 
 export async function queryAllFeedback(): Promise<FeedbackRow[]> {
-  const { db } = await import('./index');
-  const { feedback } = await import('./schema');
-  const { desc } = await import('drizzle-orm');
-
   const rows = await db.select().from(feedback).orderBy(desc(feedback.createdAt));
-  return rows as FeedbackRow[];
+  return rows;
 }
 
 // ── Toggle resolved (extracted for testability) ─────────────────────────────
 
 export async function toggleResolved(feedbackId: number): Promise<number> {
-  const { db } = await import('./index');
-  const { feedback } = await import('./schema');
-  const { eq, sql } = await import('drizzle-orm');
-
   // Toggle: if 0 → 1, if 1 → 0
   const [updated] = await db
     .update(feedback)
@@ -190,10 +166,6 @@ export async function toggleResolved(feedbackId: number): Promise<number> {
 // ── Delete feedback (extracted for testability) ─────────────────────────────
 
 export async function removeFeedback(feedbackId: number): Promise<void> {
-  const { db } = await import('./index');
-  const { feedback } = await import('./schema');
-  const { eq } = await import('drizzle-orm');
-
   const [deleted] = await db.delete(feedback).where(eq(feedback.id, feedbackId)).returning({ id: feedback.id });
   if (!deleted) throw new Error('Feedback not found');
 }
@@ -207,10 +179,8 @@ export const getFeedback = createServerFn({ method: 'GET' }).handler(async () =>
 
 export const resolveFeedback = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).feedbackId !== 'number') {
-      throw new Error('feedbackId is required');
-    }
-    return d as { feedbackId: number };
+    const obj = assertObject(d);
+    return { feedbackId: assertNumber(obj, 'feedbackId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -220,10 +190,8 @@ export const resolveFeedback = createServerFn({ method: 'POST' })
 
 export const deleteFeedback = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).feedbackId !== 'number') {
-      throw new Error('feedbackId is required');
-    }
-    return d as { feedbackId: number };
+    const obj = assertObject(d);
+    return { feedbackId: assertNumber(obj, 'feedbackId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();

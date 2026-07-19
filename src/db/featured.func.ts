@@ -56,7 +56,7 @@ export async function queryFeatured(): Promise<FeaturedBlob[]> {
     .orderBy(sql`RANDOM()`)
     .limit(6);
 
-  return rows as unknown as FeaturedBlob[];
+  return rows;
 }
 
 // ── Server function ─────────────────────────────────────────────────────────

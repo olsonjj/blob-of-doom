@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 
 import { db } from './index';
 import { blobs } from './schema';
+import { assertNumber, assertObject } from './validation';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -106,10 +107,8 @@ export const updateBlob = createServerFn({ method: 'POST' })
 
 export const softDeleteBlob = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).blobId !== 'number') {
-      throw new Error('blobId is required');
-    }
-    return d as { blobId: number };
+    const obj = assertObject(d);
+    return { blobId: assertNumber(obj, 'blobId') };
   })
   .handler(async ({ data }) => {
     const userId = await getUserId();

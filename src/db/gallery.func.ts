@@ -62,7 +62,7 @@ export async function queryGallery(params: GalleryQueryParams): Promise<GalleryB
     .groupBy(blobs.id)
     .orderBy(sort === 'doom' ? orderFn(sql`COALESCE(AVG(${ratings.score}::float), 0)`) : orderFn(blobs.createdAt));
 
-  return rows as unknown as GalleryBlob[];
+  return rows;
 }
 
 /**

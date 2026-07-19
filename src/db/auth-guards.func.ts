@@ -1,10 +1,14 @@
 import { redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { eq } from 'drizzle-orm';
+
+import { db } from './index';
+import { profiles } from './schema';
 
 /**
- * Route guards executed as server functions.
+ * Route guards and auth helpers.
  *
- * Why server functions and not inline `beforeLoad` code?
+ * Why server functions for route guards?
  * `beforeLoad` runs on the CLIENT during SPA navigation. The Clerk
  * `auth()` helper from `@clerk/tanstack-react-start/server` calls
  * `getGlobalStartContext()`, which returns `undefined` on the client
@@ -20,6 +24,8 @@ import { createServerFn } from '@tanstack/react-start';
  * back to the router correctly. This is the documented Clerk pattern.
  */
 
+// ── Route guards (createServerFn — usable in beforeLoad) ────────────────────
+
 export const requireAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const { auth } = await import('@clerk/tanstack-react-start/server');
   const { userId } = await auth();
@@ -29,24 +35,55 @@ export const requireAuth = createServerFn({ method: 'GET' }).handler(async () =>
   return { userId };
 });
 
-export const requireAdmin = createServerFn({ method: 'GET' }).handler(async () => {
+export const requireAdminGuard = createServerFn({ method: 'GET' }).handler(async () => {
   const { auth } = await import('@clerk/tanstack-react-start/server');
   const { userId } = await auth();
   if (!userId) {
     throw redirect({ to: '/sign-in/$' });
   }
 
-  const { db } = await import('./index');
-  const { profiles } = await import('./schema');
-  const { eq } = await import('drizzle-orm');
+  const isAdmin = await checkIsAdmin(userId);
+  if (!isAdmin) {
+    throw redirect({ to: '/' });
+  }
+  return { userId };
+});
+
+// ── Plain async helpers (for use within server function handlers) ───────────
+
+/**
+ * Returns true if the given userId belongs to an admin.
+ */
+export async function checkIsAdmin(userId: string): Promise<boolean> {
   const [profile] = await db
     .select({ isAdmin: profiles.isAdmin })
     .from(profiles)
     .where(eq(profiles.clerkUserId, userId))
     .limit(1);
+  return profile?.isAdmin === 1;
+}
 
-  if (profile?.isAdmin !== 1) {
-    throw redirect({ to: '/' });
-  }
-  return { userId };
-});
+/**
+ * Returns the full profile if the user exists and is not banned.
+ * Throws if the profile is missing or the user is banned.
+ */
+export async function checkNotBanned(userId: string) {
+  const [profile] = await db.select().from(profiles).where(eq(profiles.clerkUserId, userId)).limit(1);
+  if (!profile) throw new Error('Profile not found');
+  if (profile.banned === 1) throw new Error('Your account has been banned.');
+  return profile;
+}
+
+/**
+ * Assert that the current request is from an authenticated admin.
+ * Throws if not authenticated or not an admin.
+ * Returns the userId.
+ */
+export async function requireAdmin(): Promise<string> {
+  const { auth } = await import('@clerk/tanstack-react-start/server');
+  const { userId } = await auth();
+  if (!userId) throw new Error('Not authenticated');
+  const isAdmin = await checkIsAdmin(userId);
+  if (!isAdmin) throw new Error('Admin access required');
+  return userId;
+}

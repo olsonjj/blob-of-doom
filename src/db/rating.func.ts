@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { eq, sql } from 'drizzle-orm';
 
-import { checkNotBanned } from './admin.func';
+import { checkNotBanned } from './auth-guards.func';
 import { db } from './index';
 import { ratings } from './schema';
 

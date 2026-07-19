@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { eq } from 'drizzle-orm';
 
 import { ALLOWED_TYPES, MAX_FILE_SIZE } from '../shared/constants';
-import { checkNotBanned } from './admin.func';
+import { checkNotBanned } from './auth-guards.func';
 import { db } from './index';
 import { blobs, profiles } from './schema';
 
@@ -262,6 +262,6 @@ export const uploadBlob = createServerFn({ method: 'POST' })
 
     return {
       success: true,
-      blob: newBlob as Omit<typeof newBlob, 'moderationScores'> & { moderationScores: Record<string, number> | null },
+      blob: newBlob,
     };
   });

@@ -1,4 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, desc, eq } from 'drizzle-orm';
+
+import { checkIsAdmin, checkNotBanned, requireAdmin } from './auth-guards.func';
+import { db } from './index';
+import { blobs, profiles } from './schema';
+import { assertNumber, assertObject, assertString } from './validation';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -35,54 +41,13 @@ export interface FlaggedBlob {
   createdAt: Date;
 }
 
-// ── Internal helpers (all heavy imports are dynamic) ────────────────────────
+// ── Re-export for backward compatibility ────────────────────────────────────
 
-async function getDb() {
-  const { db } = await import('./index');
-  return db;
-}
-
-async function getSchema() {
-  return await import('./schema');
-}
-
-async function getDrizzleEq() {
-  const { eq } = await import('drizzle-orm');
-  return eq;
-}
-
-// ── Auth helpers (extracted for testability) ────────────────────────────────
-
-export async function checkIsAdmin(userId: string): Promise<boolean> {
-  const [db, { profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
-  const [profile] = await db
-    .select({ isAdmin: profiles.isAdmin })
-    .from(profiles)
-    .where(eq(profiles.clerkUserId, userId))
-    .limit(1);
-  return profile?.isAdmin === 1;
-}
-
-export async function checkNotBanned(userId: string): Promise<{
-  banned: number;
-  approved: number;
-  isAdmin: number;
-  uploadCountToday: number;
-  lastUploadDate: string | null;
-  clerkUserId: string;
-  createdAt: Date;
-}> {
-  const [db, { profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
-  const [profile] = await db.select().from(profiles).where(eq(profiles.clerkUserId, userId)).limit(1);
-  if (!profile) throw new Error('Profile not found');
-  if (profile.banned === 1) throw new Error('Your account has been banned.');
-  return profile;
-}
+export { checkIsAdmin, checkNotBanned };
 
 // ── User list (extracted for testability) ───────────────────────────────────
 
 export async function queryAllUsers(): Promise<AdminUser[]> {
-  const [db, { profiles }] = await Promise.all([getDb(), getSchema()]);
   const allProfiles = await db.select().from(profiles).orderBy(profiles.createdAt);
   if (allProfiles.length === 0) return [];
 
@@ -114,8 +79,6 @@ export async function queryAllUsers(): Promise<AdminUser[]> {
 // ── Toggle helpers (extracted for testability) ──────────────────────────────
 
 export async function setUserApproved(clerkUserId: string, approved: boolean): Promise<boolean> {
-  const [db, { profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
-
   // Prevent modification of admin users
   const [target] = await db
     .select({ isAdmin: profiles.isAdmin })
@@ -135,8 +98,6 @@ export async function setUserApproved(clerkUserId: string, approved: boolean): P
 }
 
 export async function setUserBanned(clerkUserId: string, banned: boolean): Promise<boolean> {
-  const [db, { profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
-
   // Prevent modification of admin users
   const [target] = await db
     .select({ isAdmin: profiles.isAdmin })
@@ -158,7 +119,6 @@ export async function setUserBanned(clerkUserId: string, banned: boolean): Promi
 // ── Delete blob (extracted for testability) ─────────────────────────────────
 
 export async function removeBlob(blobId: number): Promise<void> {
-  const [db, { blobs }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
   const [blob] = await db
     .select({
       imageThumbnailUrl: blobs.imageThumbnailUrl,
@@ -212,15 +172,6 @@ export async function queryStorageStats(): Promise<StorageStats> {
 
 // ── Server functions ────────────────────────────────────────────────────────
 
-async function requireAdmin(): Promise<string> {
-  const { auth } = await import('@clerk/tanstack-react-start/server');
-  const { userId } = await auth();
-  if (!userId) throw new Error('Not authenticated');
-  const isAdmin = await checkIsAdmin(userId);
-  if (!isAdmin) throw new Error('Admin access required');
-  return userId;
-}
-
 export const getUsers = createServerFn({ method: 'GET' }).handler(async () => {
   await requireAdmin();
   return queryAllUsers();
@@ -228,10 +179,8 @@ export const getUsers = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const approveUser = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).clerkUserId !== 'string') {
-      throw new Error('clerkUserId is required');
-    }
-    return d as { clerkUserId: string };
+    const obj = assertObject(d);
+    return { clerkUserId: assertString(obj, 'clerkUserId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -240,10 +189,8 @@ export const approveUser = createServerFn({ method: 'POST' })
 
 export const unapproveUser = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).clerkUserId !== 'string') {
-      throw new Error('clerkUserId is required');
-    }
-    return d as { clerkUserId: string };
+    const obj = assertObject(d);
+    return { clerkUserId: assertString(obj, 'clerkUserId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -252,10 +199,8 @@ export const unapproveUser = createServerFn({ method: 'POST' })
 
 export const banUser = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).clerkUserId !== 'string') {
-      throw new Error('clerkUserId is required');
-    }
-    return d as { clerkUserId: string };
+    const obj = assertObject(d);
+    return { clerkUserId: assertString(obj, 'clerkUserId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -264,10 +209,8 @@ export const banUser = createServerFn({ method: 'POST' })
 
 export const unbanUser = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).clerkUserId !== 'string') {
-      throw new Error('clerkUserId is required');
-    }
-    return d as { clerkUserId: string };
+    const obj = assertObject(d);
+    return { clerkUserId: assertString(obj, 'clerkUserId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -276,10 +219,8 @@ export const unbanUser = createServerFn({ method: 'POST' })
 
 export const deleteBlob = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).blobId !== 'number') {
-      throw new Error('blobId is required');
-    }
-    return d as { blobId: number };
+    const obj = assertObject(d);
+    return { blobId: assertNumber(obj, 'blobId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -295,9 +236,6 @@ export const getStorageStats = createServerFn({ method: 'GET' }).handler(async (
 // ── Flagged blob helpers (extracted for testability) ────────────────────────
 
 export async function queryFlaggedBlobs(): Promise<FlaggedBlob[]> {
-  const [db, { blobs, profiles }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
-  const { and, desc } = await import('drizzle-orm');
-
   const rows = await db
     .select({
       id: blobs.id,
@@ -348,7 +286,6 @@ export async function queryFlaggedBlobs(): Promise<FlaggedBlob[]> {
 }
 
 export async function approveFlaggedBlobById(blobId: number): Promise<void> {
-  const [db, { blobs }, eq] = await Promise.all([getDb(), getSchema(), getDrizzleEq()]);
   const [updated] = await db
     .update(blobs)
     .set({ flagged: 0, moderationScores: null })
@@ -366,10 +303,8 @@ export const getFlaggedBlobs = createServerFn({ method: 'GET' }).handler(async (
 
 export const approveFlaggedBlob = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).blobId !== 'number') {
-      throw new Error('blobId is required');
-    }
-    return d as { blobId: number };
+    const obj = assertObject(d);
+    return { blobId: assertNumber(obj, 'blobId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -379,10 +314,8 @@ export const approveFlaggedBlob = createServerFn({ method: 'POST' })
 
 export const rejectFlaggedBlob = createServerFn({ method: 'POST' })
   .validator((d: unknown) => {
-    if (typeof d !== 'object' || d === null || typeof (d as Record<string, unknown>).blobId !== 'number') {
-      throw new Error('blobId is required');
-    }
-    return d as { blobId: number };
+    const obj = assertObject(d);
+    return { blobId: assertNumber(obj, 'blobId') };
   })
   .handler(async ({ data }) => {
     await requireAdmin();
