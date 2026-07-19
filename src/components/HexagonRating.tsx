@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { useId, useState } from 'react';
+import { memo, useId, useState } from 'react';
 
 /**
  * Renders the Doom Scale as 1–5 hexagons.
@@ -8,7 +8,7 @@ import { useId, useState } from 'react';
  * Interactive mode: authenticated users can click to rate; shows hover preview
  * and highlights the user's own rating.
  */
-export function HexagonRating({
+export const HexagonRating = memo(function HexagonRating({
   rating,
   size = 20,
   interactive = false,
@@ -90,9 +90,9 @@ export function HexagonRating({
       )}
     </div>
   );
-}
+});
 
-function Hexagon({
+const Hexagon = memo(function Hexagon({
   filled = false,
   partial,
   size,
@@ -202,4 +202,4 @@ function Hexagon({
       )}
     </svg>
   );
-}
+});

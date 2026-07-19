@@ -37,3 +37,9 @@ body {
     -apple-system,
     sans-serif;
 }
+
+/* Gallery card off-screen rendering optimization */
+.blob-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 420px;
+}

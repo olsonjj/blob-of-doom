@@ -1,6 +1,6 @@
 import { SignUp } from '@clerk/tanstack-react-start';
 import { createFileRoute } from '@tanstack/react-router';
-import { Skull } from 'lucide-react';
+import Skull from 'lucide-react/dist/esm/icons/skull';
 
 export const Route = createFileRoute('/sign-up/$')({
   component: SignUpPage,

@@ -1,31 +1,34 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { ArrowUpDown, Calendar, Hexagon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import ArrowUpDown from 'lucide-react/dist/esm/icons/arrow-up-down';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
+import Hexagon from 'lucide-react/dist/esm/icons/hexagon';
+import { memo, useState,useTransition } from 'react';
+import useSWR from 'swr';
 
 import { BlobCard } from '../../components/BlobCard';
-import { fetchGallery, type GalleryBlob, type SortField, type SortOrder } from '../../db/gallery.func';
+import { fetchGallery, type SortField, type SortOrder } from '../../db/gallery.func';
 
 export const Route = createFileRoute('/gallery/')({ component: Gallery });
 
 function Gallery() {
-  const [blobs, setBlobs] = useState<GalleryBlob[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<SortField>('date');
   const [order, setOrder] = useState<SortOrder>('desc');
+  const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    void fetchGallery({ data: { sort, order } })
-      .then(setBlobs)
-      .finally(() => setLoading(false));
-  }, [sort, order]);
+  const { data: blobs = [], isLoading: loading } = useSWR(
+    ['gallery', sort, order],
+    () => fetchGallery({ data: { sort, order } }),
+  );
 
   const toggleSort = (field: SortField) => {
-    if (sort === field) {
-      setOrder((o) => (o === 'desc' ? 'asc' : 'desc'));
-    } else {
-      setSort(field);
-      setOrder('desc');
-    }
+    startTransition(() => {
+      if (sort === field) {
+        setOrder((o) => (o === 'desc' ? 'asc' : 'desc'));
+      } else {
+        setSort(field);
+        setOrder('desc');
+      }
+    });
   };
 
   const sortLabel = (field: SortField) => {
@@ -72,11 +75,18 @@ function Gallery() {
           ))}
         </div>
       )}
+      {isPending && !loading && (
+        <div className="mt-4 flex justify-center">
+          <div className="h-1 w-32 bg-noir-800 rounded-full overflow-hidden">
+            <div className="h-full bg-doom-500 animate-pulse rounded-full" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function SortButton({
+const SortButton = memo(function SortButton({
   active,
   onClick,
   label,
@@ -99,7 +109,7 @@ function SortButton({
       {active && <ArrowUpDown className="w-3 h-3 opacity-70" />}
     </button>
   );
-}
+});
 
 function EmptyState() {
   return (

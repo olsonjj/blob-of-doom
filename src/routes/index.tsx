@@ -1,22 +1,17 @@
 import { useAuth } from '@clerk/tanstack-react-start';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 
 import { BlobCard } from '../components/BlobCard';
-import { type FeaturedBlob, fetchFeatured } from '../db/featured.func';
+import { fetchFeatured } from '../db/featured.func';
 
 export const Route = createFileRoute('/')({ component: Home });
 
 function Home() {
   const { isSignedIn } = useAuth();
-  const [featured, setFeatured] = useState<FeaturedBlob[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    void fetchFeatured()
-      .then(setFeatured)
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: featured = [], isLoading: loading } = useSWR('featured', () => fetchFeatured(), {
+    revalidateOnFocus: false,
+  });
 
   return (
     <div>

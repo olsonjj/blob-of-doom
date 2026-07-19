@@ -1,10 +1,15 @@
 import { useAuth } from '@clerk/tanstack-react-start';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { AlertTriangle, ArrowLeft, Eye, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
+import Eye from 'lucide-react/dist/esm/icons/eye';
+import Pencil from 'lucide-react/dist/esm/icons/pencil';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
+import { useCallback, useState } from 'react';
+import useSWR from 'swr';
 
 import { HexagonRating } from '../../../components/HexagonRating';
-import { type BlobDetail, fetchBlobDetail } from '../../../db/blob-detail.func';
+import { fetchBlobDetail } from '../../../db/blob-detail.func';
 import { softDeleteBlob, updateBlob } from '../../../db/blob-edit.func';
 import { submitRating } from '../../../db/rating.func';
 
@@ -17,9 +22,17 @@ function BlobDetailPage() {
   const { isSignedIn, userId } = useAuth();
   const router = useRouter();
 
-  const [blob, setBlob] = useState<BlobDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const parsedId = parseInt(blobId, 10);
+  const isInvalidId = isNaN(parsedId);
+
+  const {
+    data: blob,
+    error: swrError,
+    isLoading: loading,
+    mutate,
+  } = useSWR(!isInvalidId ? ['blob', blobId] : null, () => fetchBlobDetail({ data: parsedId }));
+
+  const error = swrError ? (swrError instanceof Error ? swrError.message : 'Failed to load blob') : null;
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -37,27 +50,16 @@ function BlobDetailPage() {
 
   const isOwner = !!(userId && blob && blob.uploaderProfileId === userId);
 
-  const parsedId = parseInt(blobId, 10);
-  const isInvalidId = isNaN(parsedId);
-
-  useEffect(() => {
-    if (isInvalidId) return;
-    void fetchBlobDetail({ data: parsedId })
-      .then(setBlob)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load blob'))
-      .finally(() => setLoading(false));
-  }, [blobId, parsedId, isInvalidId]);
-
   const handleRate = useCallback(
     async (score: number) => {
-      if (!blob) return;
-      const id = blob.id;
+      const id = parseInt(blobId, 10);
 
-      setBlob((prev) => {
-        if (!prev) return prev;
-        const oldUserRating = prev.userRating;
-        const oldAverage = prev.averageRating;
-        const oldCount = prev.ratingCount;
+      // Optimistic update
+      void mutate((current) => {
+        if (!current) return current;
+        const oldUserRating = current.userRating;
+        const oldAverage = current.averageRating;
+        const oldCount = current.ratingCount;
 
         let newCount: number;
         let newAverage: number;
@@ -69,27 +71,29 @@ function BlobDetailPage() {
           newAverage = (oldAverage * oldCount - oldUserRating + score) / newCount;
         }
 
-        return { ...prev, userRating: score, averageRating: newAverage, ratingCount: newCount };
-      });
+        return { ...current, userRating: score, averageRating: newAverage, ratingCount: newCount };
+      }, false);
 
       try {
         const result = await submitRating({ data: { blobId: id, score } });
-        setBlob((prev) =>
-          prev
-            ? {
-                ...prev,
-                userRating: result.score,
-                averageRating: result.averageRating,
-                ratingCount: result.ratingCount,
-              }
-            : prev,
+        void mutate(
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  userRating: result.score,
+                  averageRating: result.averageRating,
+                  ratingCount: result.ratingCount,
+                }
+              : current,
+          false,
         );
       } catch {
-        const fresh = await fetchBlobDetail({ data: id });
-        setBlob(fresh);
+        // Revalidate from server on failure
+        void mutate();
       }
     },
-    [blob],
+    [blobId, mutate],
   );
 
   // ── Edit handlers ──────────────────────────────────────────────────────
@@ -133,8 +137,7 @@ function BlobDetailPage() {
       }
 
       // Refresh the blob data
-      const fresh = await fetchBlobDetail({ data: blob?.id ?? 0 });
-      setBlob(fresh);
+      void mutate();
       setEditing(false);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Update failed';

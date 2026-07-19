@@ -1,19 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  AlertTriangle,
-  Ban,
-  CheckCircle,
-  Eye,
-  Flag,
-  HardDrive,
-  Image,
-  RefreshCw,
-  Shield,
-  Trash2,
-  Users,
-  XCircle,
-} from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle';
+import Ban from 'lucide-react/dist/esm/icons/ban';
+import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
+import Eye from 'lucide-react/dist/esm/icons/eye';
+import Flag from 'lucide-react/dist/esm/icons/flag';
+import HardDrive from 'lucide-react/dist/esm/icons/hard-drive';
+import Image from 'lucide-react/dist/esm/icons/image';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
+import Shield from 'lucide-react/dist/esm/icons/shield';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
+import Users from 'lucide-react/dist/esm/icons/users';
+import XCircle from 'lucide-react/dist/esm/icons/x-circle';
+import { memo, useState } from 'react';
+import useSWR from 'swr';
 
 import {
   type AdminUser,
@@ -186,7 +185,7 @@ function StorageCards({ stats, loading }: { stats: StorageStats | null; loading:
 
 // ── User Row ────────────────────────────────────────────────────────────────
 
-function UserRow({
+const UserRow = memo(function UserRow({
   user,
   onToggleApproved,
   onToggleBanned,
@@ -270,7 +269,7 @@ function UserRow({
       </td>
     </tr>
   );
-}
+});
 
 // ── Blob Management Row ─────────────────────────────────────────────────────
 
@@ -469,22 +468,41 @@ type Tab = 'users' | 'blobs' | 'flagged';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('users');
+  // Track which tabs have been visited for lazy loading
+  const [visitedTabs, setVisitedTabs] = useState<Set<Tab>>(new Set(['users']));
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [usersLoading, setUsersLoading] = useState(true);
-  const [usersError, setUsersError] = useState<string | null>(null);
+  // Users and storage — always fetched (default tab)
+  const {
+    data: users = [],
+    error: usersError,
+    isLoading: usersLoading,
+    mutate: mutateUsers,
+  } = useSWR('admin-users', () => getUsers());
 
-  const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
-  const [storageLoading, setStorageLoading] = useState(true);
-  const [storageError, setStorageError] = useState<string | null>(null);
+  const {
+    data: storageStats = null,
+    error: storageError,
+    isLoading: storageLoading,
+    mutate: mutateStorage,
+  } = useSWR('admin-storage', () => getStorageStats());
 
-  const [blobs, setBlobs] = useState<GalleryBlob[]>([]);
-  const [blobsLoading, setBlobsLoading] = useState(true);
-  const [blobsError, setBlobsError] = useState<string | null>(null);
+  // Blobs — fetched when blobs tab is first visited
+  const blobsEnabled = visitedTabs.has('blobs');
+  const {
+    data: blobs = [],
+    error: blobsError,
+    isLoading: blobsLoading,
+    mutate: mutateBlobs,
+  } = useSWR(blobsEnabled ? 'admin-blobs' : null, () => fetchGallery({ data: { sort: 'date', order: 'desc' } }));
 
-  const [flaggedBlobs, setFlaggedBlobs] = useState<FlaggedBlob[]>([]);
-  const [flaggedLoading, setFlaggedLoading] = useState(false);
-  const [flaggedError, setFlaggedError] = useState<string | null>(null);
+  // Flagged — fetched when flagged tab is first visited
+  const flaggedEnabled = visitedTabs.has('flagged');
+  const {
+    data: flaggedBlobs = [],
+    error: flaggedError,
+    isLoading: flaggedLoading,
+    mutate: mutateFlagged,
+  } = useSWR(flaggedEnabled ? 'admin-flagged' : null, () => getFlaggedBlobs());
 
   // Confirmation modal state
   const [confirm, setConfirm] = useState<{
@@ -497,116 +515,16 @@ function AdminDashboard() {
 
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // ── Data fetching ─────────────────────────────────────────────────────
-
-  const loadUsers = useCallback(async (reset = false) => {
-    if (reset) {
-      setUsersLoading(true);
-      setUsersError(null);
-    }
-    try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (err) {
-      setUsersError(err instanceof Error ? err.message : 'Failed to load users');
-    } finally {
-      setUsersLoading(false);
-    }
-  }, []);
-
-  const loadStorage = useCallback(async (reset = false) => {
-    if (reset) {
-      setStorageLoading(true);
-      setStorageError(null);
-    }
-    try {
-      const data = await getStorageStats();
-      setStorageStats(data);
-    } catch (err) {
-      console.error('loadStorage failed:', err);
-      setStorageError('Failed to load storage stats');
-    } finally {
-      setStorageLoading(false);
-    }
-  }, []);
-
-  const loadBlobs = useCallback(async (reset = false) => {
-    if (reset) {
-      setBlobsLoading(true);
-      setBlobsError(null);
-    }
-    try {
-      const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } });
-      setBlobs(data);
-    } catch (err) {
-      console.error('loadBlobs failed:', err);
-      setBlobsError('Failed to load blobs');
-    } finally {
-      setBlobsLoading(false);
-    }
-  }, []);
-
-  const loadFlagged = useCallback(async (reset = false) => {
-    if (reset) {
-      setFlaggedLoading(true);
-      setFlaggedError(null);
-    }
-    try {
-      const data = await getFlaggedBlobs();
-      setFlaggedBlobs(data);
-    } catch (err) {
-      console.error('loadFlagged failed:', err);
-      setFlaggedError('Failed to load flagged blobs');
-    } finally {
-      setFlaggedLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const data = await getUsers();
-        setUsers(data);
-      } catch (err) {
-        setUsersError(err instanceof Error ? err.message : 'Failed to load users');
-      } finally {
-        setUsersLoading(false);
-      }
-    })();
-    void (async () => {
-      try {
-        const data = await getStorageStats();
-        setStorageStats(data);
-      } catch (err) {
-        console.error('loadStorage failed:', err);
-        setStorageError('Failed to load storage stats');
-      } finally {
-        setStorageLoading(false);
-      }
-    })();
-    void (async () => {
-      try {
-        const data = await fetchGallery({ data: { sort: 'date', order: 'desc' } });
-        setBlobs(data);
-      } catch (err) {
-        console.error('loadBlobs failed:', err);
-        setBlobsError('Failed to load blobs');
-      } finally {
-        setBlobsLoading(false);
-      }
-    })();
-    void (async () => {
-      try {
-        const data = await getFlaggedBlobs();
-        setFlaggedBlobs(data);
-      } catch (err) {
-        console.error('loadFlagged failed:', err);
-        setFlaggedError('Failed to load flagged blobs');
-      } finally {
-        setFlaggedLoading(false);
-      }
-    })();
-  }, []);
+  // Mark tab as visited when switching
+  const switchTab = (tab: Tab) => {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => {
+      if (prev.has(tab)) return prev;
+      const next = new Set(prev);
+      next.add(tab);
+      return next;
+    });
+  };
 
   // ── Actions ────────────────────────────────────────────────────────────
 
@@ -624,7 +542,7 @@ function AdminDashboard() {
         } else {
           await approveUser({ data: { clerkUserId } });
         }
-        await loadUsers();
+        await mutateUsers();
       },
     });
   };
@@ -643,7 +561,7 @@ function AdminDashboard() {
         } else {
           await banUser({ data: { clerkUserId } });
         }
-        await loadUsers();
+        await mutateUsers();
       },
     });
   };
@@ -657,8 +575,8 @@ function AdminDashboard() {
       variant: 'danger',
       action: async () => {
         await deleteBlob({ data: { blobId } });
-        await loadBlobs();
-        await loadStorage();
+        await mutateBlobs();
+        await mutateStorage();
       },
     });
   };
@@ -672,7 +590,7 @@ function AdminDashboard() {
       variant: 'warning',
       action: async () => {
         await approveFlaggedBlob({ data: { blobId } });
-        await loadFlagged();
+        await mutateFlagged();
       },
     });
   };
@@ -686,8 +604,8 @@ function AdminDashboard() {
       variant: 'danger',
       action: async () => {
         await rejectFlaggedBlob({ data: { blobId } });
-        await loadFlagged();
-        await loadStorage();
+        await mutateFlagged();
+        await mutateStorage();
       },
     });
   };
@@ -719,10 +637,10 @@ function AdminDashboard() {
         </div>
         <button
           onClick={() => {
-            void loadUsers(true);
-            void loadStorage(true);
-            void loadBlobs(true);
-            if (activeTab === 'flagged') void loadFlagged(true);
+            void mutateUsers();
+            void mutateStorage();
+            void mutateBlobs();
+            if (activeTab === 'flagged') void mutateFlagged();
           }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
         >
@@ -750,7 +668,7 @@ function AdminDashboard() {
         ).map(([tab, label, Icon]) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => switchTab(tab)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
               activeTab === tab ? 'bg-doom-500/20 text-doom-300' : 'text-noir-400 hover:text-noir-200'
             }`}
@@ -777,7 +695,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{storageError}</p>
               <button
-                onClick={() => void loadStorage(true)}
+                onClick={() => void mutateStorage()}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -861,7 +779,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{blobsError}</p>
               <button
-                onClick={() => void loadBlobs(true)}
+                onClick={() => void mutateBlobs()}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
@@ -923,7 +841,7 @@ function AdminDashboard() {
             <div className="bg-doom-500/10 border border-doom-500/30 rounded-lg p-4">
               <p className="text-sm text-doom-300 mb-3">{flaggedError}</p>
               <button
-                onClick={() => void loadFlagged(true)}
+                onClick={() => void mutateFlagged()}
                 className="px-4 py-2 text-sm font-medium text-noir-300 hover:text-noir-100 bg-noir-800 hover:bg-noir-700 rounded-lg transition-colors cursor-pointer"
               >
                 Retry

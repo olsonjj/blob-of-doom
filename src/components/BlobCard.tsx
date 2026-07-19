@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { memo } from 'react';
 
 import type { GalleryBlob } from '../db/gallery.func';
 import { HexagonRating } from './HexagonRating';
@@ -8,7 +9,7 @@ import { HexagonRating } from './HexagonRating';
  * Displays the medium image variant, title, Doom Scale rating, and upload date.
  * Links to the blob detail page.
  */
-export function BlobCard({ blob }: { blob: GalleryBlob }) {
+export const BlobCard = memo(function BlobCard({ blob }: { blob: GalleryBlob }) {
   const formattedDate = new Date(blob.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -16,7 +17,7 @@ export function BlobCard({ blob }: { blob: GalleryBlob }) {
   });
 
   return (
-    <article className="bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors group flex flex-col">
+    <article className="blob-card bg-noir-900 border border-noir-700 rounded-xl overflow-hidden hover:border-noir-600 transition-colors group flex flex-col">
       {/* Image — links to detail page */}
       <Link to="/gallery/$blobId" params={{ blobId: blob.id.toString() }} className="block relative">
         <div className="aspect-[4/3] overflow-hidden bg-noir-800">
@@ -50,4 +51,4 @@ export function BlobCard({ blob }: { blob: GalleryBlob }) {
       </div>
     </article>
   );
-}
+})
