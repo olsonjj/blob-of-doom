@@ -12,8 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint . && eslint -c scripts/eslint.config.mjs scripts/",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write \"src/\"",
+    "format:check": "prettier --check \"src/\"",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
