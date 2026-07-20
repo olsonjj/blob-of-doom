@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** in-progress
+**Status:** complete
 
 - [x] Index on `blobs.uploader_profile_id` (used in joins with profiles)
 - [x] Index on `blobs.created_at` (used in ORDER BY for gallery and admin)
