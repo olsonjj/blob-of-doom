@@ -67,14 +67,7 @@ export const BLOBS_COLUMNS = [
 ] as const;
 
 /** Column order for the ratings table. */
-export const RATINGS_COLUMNS = [
-  'id',
-  'blob_id',
-  'rater_profile_id',
-  'score',
-  'created_at',
-  'updated_at',
-] as const;
+export const RATINGS_COLUMNS = ['id', 'blob_id', 'rater_profile_id', 'score', 'created_at', 'updated_at'] as const;
 
 // ── Result builders (arrayMode: true — what Drizzle uses) ───────────────────
 
@@ -86,10 +79,7 @@ function fieldDefs(columns: readonly string[]): Array<{ name: string; dataTypeID
  * Build a NeonFullResult for a SELECT returning array rows (arrayMode: true).
  * This is what Drizzle uses for all query-builder queries.
  */
-export function selectArrayResult(
-  rows: unknown[][],
-  columns: readonly string[],
-): NeonFullResult {
+export function selectArrayResult(rows: unknown[][], columns: readonly string[]): NeonFullResult {
   return {
     rows,
     fields: fieldDefs(columns),
@@ -103,11 +93,7 @@ export function selectArrayResult(
  * Build a NeonFullResult for an INSERT/UPDATE/DELETE returning rows.
  * Drizzle uses arrayMode: true for RETURNING clauses too.
  */
-export function mutationArrayResult(
-  rows: unknown[][],
-  columns: readonly string[],
-  command = 'INSERT',
-): NeonFullResult {
+export function mutationArrayResult(rows: unknown[][], columns: readonly string[], command = 'INSERT'): NeonFullResult {
   return {
     rows,
     fields: fieldDefs(columns),
@@ -141,15 +127,17 @@ export function emptyMutationResult(command = 'UPDATE'): NeonFullResult {
  * Order: clerk_user_id, upload_count_today, last_upload_date, approved,
  *        banned, is_admin, created_at
  */
-export function profileRow(values: {
-  clerkUserId?: string;
-  uploadCountToday?: number;
-  lastUploadDate?: string | null;
-  approved?: number;
-  banned?: number;
-  isAdmin?: number;
-  createdAt?: string;
-} = {}): unknown[] {
+export function profileRow(
+  values: {
+    clerkUserId?: string;
+    uploadCountToday?: number;
+    lastUploadDate?: string | null;
+    approved?: number;
+    banned?: number;
+    isAdmin?: number;
+    createdAt?: string;
+  } = {},
+): unknown[] {
   return [
     values.clerkUserId ?? 'user_1',
     values.uploadCountToday ?? 0,
@@ -164,23 +152,25 @@ export function profileRow(values: {
 /**
  * Build a blobs row array in schema column order.
  */
-export function blobRow(values: {
-  id?: number;
-  title?: string;
-  description?: string | null;
-  dateOccurred?: string;
-  filamentType?: string;
-  machineUsed?: string;
-  imageThumbnailUrl?: string;
-  imageMediumUrl?: string;
-  imageFullUrl?: string;
-  uploaderProfileId?: string;
-  viewCount?: number;
-  deleted?: number;
-  flagged?: number;
-  moderationScores?: Record<string, number> | null;
-  createdAt?: string;
-} = {}): unknown[] {
+export function blobRow(
+  values: {
+    id?: number;
+    title?: string;
+    description?: string | null;
+    dateOccurred?: string;
+    filamentType?: string;
+    machineUsed?: string;
+    imageThumbnailUrl?: string;
+    imageMediumUrl?: string;
+    imageFullUrl?: string;
+    uploaderProfileId?: string;
+    viewCount?: number;
+    deleted?: number;
+    flagged?: number;
+    moderationScores?: Record<string, number> | null;
+    createdAt?: string;
+  } = {},
+): unknown[] {
   return [
     values.id ?? 1,
     values.title ?? 'Test Blob',
@@ -203,14 +193,16 @@ export function blobRow(values: {
 /**
  * Build a ratings row array in schema column order.
  */
-export function ratingRow(values: {
-  id?: number;
-  blobId?: number;
-  raterProfileId?: string;
-  score?: number;
-  createdAt?: string;
-  updatedAt?: string;
-} = {}): unknown[] {
+export function ratingRow(
+  values: {
+    id?: number;
+    blobId?: number;
+    raterProfileId?: string;
+    score?: number;
+    createdAt?: string;
+    updatedAt?: string;
+  } = {},
+): unknown[] {
   return [
     values.id ?? 1,
     values.blobId ?? 1,

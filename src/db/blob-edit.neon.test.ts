@@ -56,9 +56,7 @@ function queueOwnershipCheck(uploaderProfileId: string, deleted = 0) {
 }
 
 function queueAdminCheck(isAdmin: number) {
-  mockQueryFn.query.mockResolvedValueOnce(
-    selectArrayResult([[isAdmin]], ADMIN_CHECK_COLUMNS),
-  );
+  mockQueryFn.query.mockResolvedValueOnce(selectArrayResult([[isAdmin]], ADMIN_CHECK_COLUMNS));
 }
 
 function queueBlobNotFound() {
@@ -69,7 +67,11 @@ function queueUpdateSuccess() {
   mockQueryFn.query.mockResolvedValueOnce(emptyMutationResult('UPDATE'));
 }
 
-function queueImageUrls(thumb = 'https://example.com/thumb.webp', medium = 'https://example.com/medium.webp', full = 'https://example.com/full.webp') {
+function queueImageUrls(
+  thumb = 'https://example.com/thumb.webp',
+  medium = 'https://example.com/medium.webp',
+  full = 'https://example.com/full.webp',
+) {
   mockQueryFn.query.mockResolvedValueOnce(
     selectArrayResult([blobImageUrlRow(thumb, medium, full)], BLOB_IMAGE_URL_COLUMNS),
   );
@@ -130,9 +132,7 @@ describe('updateBlobRecord (neon-level)', () => {
     queueOwnershipCheck('other_user');
     queueAdminCheck(0);
 
-    await expect(updateBlobRecord(validInput, 'user_1')).rejects.toThrow(
-      'You can only edit your own blobs',
-    );
+    await expect(updateBlobRecord(validInput, 'user_1')).rejects.toThrow('You can only edit your own blobs');
   });
 
   it('allows admin to edit any blob (bypasses ownership)', async () => {
@@ -190,9 +190,7 @@ describe('softDeleteBlobRecord (neon-level)', () => {
     queueOwnershipCheck('other_user');
     queueAdminCheck(0);
 
-    await expect(softDeleteBlobRecord(1, 'user_1')).rejects.toThrow(
-      'You can only edit your own blobs',
-    );
+    await expect(softDeleteBlobRecord(1, 'user_1')).rejects.toThrow('You can only edit your own blobs');
   });
 
   it('allows admin to soft-delete any blob', async () => {

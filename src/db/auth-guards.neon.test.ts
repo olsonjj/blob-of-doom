@@ -36,19 +36,12 @@ vi.mock('@clerk/tanstack-react-start/server', () => ({
 
 // Now safe to import — the db module will use our mocked neon
 import { checkIsAdmin, checkNotBanned, requireAdmin } from './auth-guards.func';
-import {
-  ADMIN_CHECK_COLUMNS,
-  emptySelectResult,
-  oneProfileRow,
-  selectArrayResult,
-} from './test-helpers';
+import { ADMIN_CHECK_COLUMNS, emptySelectResult, oneProfileRow, selectArrayResult } from './test-helpers';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function queueAdminCheck(isAdmin: number) {
-  mockQueryFn.query.mockResolvedValueOnce(
-    selectArrayResult([[isAdmin]], ADMIN_CHECK_COLUMNS),
-  );
+  mockQueryFn.query.mockResolvedValueOnce(selectArrayResult([[isAdmin]], ADMIN_CHECK_COLUMNS));
 }
 
 // ── Tests: checkIsAdmin ─────────────────────────────────────────────────────
@@ -107,7 +100,17 @@ describe('checkNotBanned (neon-level)', () => {
   });
 
   it('throws when profile not found', async () => {
-    mockQueryFn.query.mockResolvedValueOnce(emptySelectResult(['clerk_user_id', 'upload_count_today', 'last_upload_date', 'approved', 'banned', 'is_admin', 'created_at']));
+    mockQueryFn.query.mockResolvedValueOnce(
+      emptySelectResult([
+        'clerk_user_id',
+        'upload_count_today',
+        'last_upload_date',
+        'approved',
+        'banned',
+        'is_admin',
+        'created_at',
+      ]),
+    );
 
     await expect(checkNotBanned('user_1')).rejects.toThrow('Profile not found');
   });

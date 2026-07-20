@@ -47,16 +47,12 @@ import {
 
 function queueBlobVisible(visible: boolean) {
   mockQueryFn.query.mockResolvedValueOnce(
-    visible
-      ? selectArrayResult([[1]], BLOB_VISIBLE_COLUMNS)
-      : emptySelectResult(BLOB_VISIBLE_COLUMNS),
+    visible ? selectArrayResult([[1]], BLOB_VISIBLE_COLUMNS) : emptySelectResult(BLOB_VISIBLE_COLUMNS),
   );
 }
 
 function queueUpsertResponse(overrides: Parameters<typeof ratingRow>[0] = {}) {
-  mockQueryFn.query.mockResolvedValueOnce(
-    mutationArrayResult([ratingRow(overrides)], RATINGS_COLUMNS, 'INSERT'),
-  );
+  mockQueryFn.query.mockResolvedValueOnce(mutationArrayResult([ratingRow(overrides)], RATINGS_COLUMNS, 'INSERT'));
 }
 
 function queueAverageResponse(averageRating: number, ratingCount: number) {

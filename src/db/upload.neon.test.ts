@@ -42,12 +42,7 @@ import {
   UPLOAD_COUNT_COLUMNS,
   uploadCountRow,
 } from './test-helpers';
-import {
-  checkUploadLimit,
-  incrementUploadCount,
-  todayDateString,
-  validateUploadInput,
-} from './upload.func';
+import { checkUploadLimit, incrementUploadCount, todayDateString, validateUploadInput } from './upload.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -184,9 +179,7 @@ describe('incrementUploadCount (neon-level)', () => {
     queueProfileResponse({ uploadCountToday: 0, lastUploadDate: '2024-12-02' });
     queueIncrementRaceLost();
 
-    await expect(incrementUploadCount('user_1', 1, '2024-12-02')).rejects.toThrow(
-      'Upload limit reached',
-    );
+    await expect(incrementUploadCount('user_1', 1, '2024-12-02')).rejects.toThrow('Upload limit reached');
   });
 
   it('handles null previous date (first ever upload)', async () => {
