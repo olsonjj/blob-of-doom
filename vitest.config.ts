@@ -12,5 +12,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
+    env: {
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+    },
   },
 });

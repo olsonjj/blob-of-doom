@@ -40,13 +40,23 @@ import { softDeleteBlobRecord, updateBlobRecord } from './blob-edit.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function mockOwnership(overrides: Partial<{ uploaderProfileId: string; deleted: number }> = {}) {
+/**
+ * Queue the ownership-check response (first query in verifyOwnership).
+ * Does NOT queue the admin-check response — callers must do that separately
+ * to avoid leaking unconsumed responses when verifyOwnership throws early.
+ */
+function queueOwnershipCheck(overrides: Partial<{ uploaderProfileId: string; deleted: number }> = {}) {
   selectLimitMock.mockResolvedValueOnce([
     {
       uploaderProfileId: overrides.uploaderProfileId ?? 'user_1',
       deleted: overrides.deleted ?? 0,
     },
   ]);
+}
+
+/** Queue the admin-check response (second query in verifyOwnership, from checkIsAdmin). */
+function queueAdminCheck(isAdmin = 0) {
+  selectLimitMock.mockResolvedValueOnce([{ isAdmin }]);
 }
 
 // ── Tests: updateBlobRecord ─────────────────────────────────────────────────
@@ -57,7 +67,8 @@ describe('updateBlobRecord', () => {
   });
 
   it('updates blob fields when user owns the blob', async () => {
-    mockOwnership({ uploaderProfileId: 'user_1' });
+    queueOwnershipCheck({ uploaderProfileId: 'user_1' });
+    queueAdminCheck(0);
 
     const result = await updateBlobRecord(
       {
@@ -83,7 +94,8 @@ describe('updateBlobRecord', () => {
   });
 
   it('allows null description', async () => {
-    mockOwnership({ uploaderProfileId: 'user_1' });
+    queueOwnershipCheck({ uploaderProfileId: 'user_1' });
+    queueAdminCheck(0);
 
     const result = await updateBlobRecord(
       {
@@ -120,7 +132,7 @@ describe('updateBlobRecord', () => {
   });
 
   it('throws when blob is soft-deleted', async () => {
-    mockOwnership({ uploaderProfileId: 'user_1', deleted: 1 });
+    queueOwnershipCheck({ uploaderProfileId: 'user_1', deleted: 1 });
 
     await expect(
       updateBlobRecord(
@@ -131,7 +143,8 @@ describe('updateBlobRecord', () => {
   });
 
   it('throws when user does not own the blob', async () => {
-    mockOwnership({ uploaderProfileId: 'other_user' });
+    queueOwnershipCheck({ uploaderProfileId: 'other_user' });
+    queueAdminCheck(0);
 
     await expect(
       updateBlobRecord(
@@ -150,9 +163,9 @@ describe('softDeleteBlobRecord', () => {
   });
 
   it('soft-deletes blob when user owns it', async () => {
-    // First call: verifyOwnership
-    mockOwnership({ uploaderProfileId: 'user_1' });
-    // Second call: fetch image URLs before delete
+    queueOwnershipCheck({ uploaderProfileId: 'user_1' });
+    queueAdminCheck(0);
+    // Fetch image URLs before delete
     selectLimitMock.mockResolvedValueOnce([
       {
         imageThumbnailUrl: 'https://blob.vercel/thumb.webp',
@@ -175,13 +188,14 @@ describe('softDeleteBlobRecord', () => {
   });
 
   it('throws when blob is already soft-deleted', async () => {
-    mockOwnership({ uploaderProfileId: 'user_1', deleted: 1 });
+    queueOwnershipCheck({ uploaderProfileId: 'user_1', deleted: 1 });
 
     await expect(softDeleteBlobRecord(1, 'user_1')).rejects.toThrow('Blob not found');
   });
 
   it('throws when user does not own the blob', async () => {
-    mockOwnership({ uploaderProfileId: 'other_user' });
+    queueOwnershipCheck({ uploaderProfileId: 'other_user' });
+    queueAdminCheck(0);
 
     await expect(softDeleteBlobRecord(1, 'user_1')).rejects.toThrow('You can only edit your own blobs');
   });

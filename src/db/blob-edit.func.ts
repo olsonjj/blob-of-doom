@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { eq } from 'drizzle-orm';
 
+import { checkIsAdmin } from './auth-guards.func';
 import { db } from './index';
 import { blobs } from './schema';
 import { assertNumber, assertObject } from './validation';
@@ -41,6 +42,11 @@ async function verifyOwnership(blobId: number, userId: string): Promise<void> {
 
   if (!blob) throw new Error('Blob not found');
   if (blob.deleted === 1) throw new Error('Blob not found');
+
+  // Admins can edit any blob
+  const isAdmin = await checkIsAdmin(userId);
+  if (isAdmin) return;
+
   if (blob.uploaderProfileId !== userId) throw new Error('You can only edit your own blobs');
 }
 
