@@ -110,10 +110,7 @@ export function FeedbackList({
 }) {
   if (error) {
     return (
-      <ErrorBanner
-        message={error instanceof Error ? error.message : 'Failed to load feedback'}
-        onRetry={onRetry}
-      />
+      <ErrorBanner message={error instanceof Error ? error.message : 'Failed to load feedback'} onRetry={onRetry} />
     );
   }
 
@@ -145,23 +142,13 @@ export function FeedbackList({
       {feedbackItems
         .filter((f) => f.resolved === 0)
         .map((item) => (
-          <FeedbackRow
-            key={item.id}
-            item={item}
-            onResolve={onResolve}
-            onDelete={onDelete}
-          />
+          <FeedbackRow key={item.id} item={item} onResolve={onResolve} onDelete={onDelete} />
         ))}
       {/* Resolved below */}
       {feedbackItems
         .filter((f) => f.resolved === 1)
         .map((item) => (
-          <FeedbackRow
-            key={item.id}
-            item={item}
-            onResolve={onResolve}
-            onDelete={onDelete}
-          />
+          <FeedbackRow key={item.id} item={item} onResolve={onResolve} onDelete={onDelete} />
         ))}
     </div>
   );

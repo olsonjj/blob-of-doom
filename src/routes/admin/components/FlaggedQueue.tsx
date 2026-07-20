@@ -183,12 +183,7 @@ export function FlaggedQueue({
   return (
     <div className="space-y-4">
       {flaggedBlobs.map((blob) => (
-        <FlaggedBlobCard
-          key={blob.id}
-          blob={blob}
-          onApprove={onApprove}
-          onReject={onReject}
-        />
+        <FlaggedBlobCard key={blob.id} blob={blob} onApprove={onApprove} onReject={onReject} />
       ))}
     </div>
   );

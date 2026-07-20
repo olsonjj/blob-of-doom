@@ -38,9 +38,7 @@ describe('BlobTable', () => {
   });
 
   it('shows error banner on error', () => {
-    render(
-      <BlobTable blobs={[]} loading={false} error={new Error('Failed')} onRetry={vi.fn()} onDelete={vi.fn()} />,
-    );
+    render(<BlobTable blobs={[]} loading={false} error={new Error('Failed')} onRetry={vi.fn()} onDelete={vi.fn()} />);
     expect(screen.getByTestId('error-banner')).toBeInTheDocument();
   });
 
@@ -76,9 +74,7 @@ describe('BlobTable', () => {
 
   it('calls onDelete when delete button is clicked', async () => {
     const onDelete = vi.fn();
-    render(
-      <BlobTable blobs={[buildBlob()]} loading={false} error={null} onRetry={vi.fn()} onDelete={onDelete} />,
-    );
+    render(<BlobTable blobs={[buildBlob()]} loading={false} error={null} onRetry={vi.fn()} onDelete={onDelete} />);
     await userEvent.click(screen.getByTitle('Delete blob'));
     expect(onDelete).toHaveBeenCalledWith(1);
   });
@@ -100,7 +96,13 @@ describe('BlobTable', () => {
 
   it('does not show moderation badges when scores are null', () => {
     render(
-      <BlobTable blobs={[buildBlob({ moderationScores: null })]} loading={false} error={null} onRetry={vi.fn()} onDelete={vi.fn()} />,
+      <BlobTable
+        blobs={[buildBlob({ moderationScores: null })]}
+        loading={false}
+        error={null}
+        onRetry={vi.fn()}
+        onDelete={vi.fn()}
+      />,
     );
     expect(screen.queryByText(/Nudity/)).toBeNull();
   });

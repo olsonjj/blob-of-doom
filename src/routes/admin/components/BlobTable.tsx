@@ -83,12 +83,7 @@ export function BlobTable({
   onDelete: (blobId: number) => void;
 }) {
   if (error) {
-    return (
-      <ErrorBanner
-        message={error instanceof Error ? error.message : 'Failed to load blobs'}
-        onRetry={onRetry}
-      />
-    );
+    return <ErrorBanner message={error instanceof Error ? error.message : 'Failed to load blobs'} onRetry={onRetry} />;
   }
 
   if (loading) {

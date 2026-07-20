@@ -113,12 +113,7 @@ export function UserTable({
   onToggleBanned: (clerkUserId: string, current: boolean) => void;
 }) {
   if (error) {
-    return (
-      <ErrorBanner
-        message={error instanceof Error ? error.message : 'Failed to load users'}
-        onRetry={onRetry}
-      />
-    );
+    return <ErrorBanner message={error instanceof Error ? error.message : 'Failed to load users'} onRetry={onRetry} />;
   }
 
   if (loading) {
