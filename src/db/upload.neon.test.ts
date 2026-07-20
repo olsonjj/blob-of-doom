@@ -33,21 +33,21 @@ vi.mock('@neondatabase/serverless', () => ({
 
 // Now safe to import
 import {
-  checkUploadLimit,
-  incrementUploadCount,
-  todayDateString,
-  validateUploadInput,
-} from './upload.func';
-import {
-  PROFILES_COLUMNS,
-  UPLOAD_COUNT_COLUMNS,
   emptyMutationResult,
   emptySelectResult,
   mutationArrayResult,
   oneProfileRow,
   profileRow,
+  PROFILES_COLUMNS,
+  UPLOAD_COUNT_COLUMNS,
   uploadCountRow,
 } from './test-helpers';
+import {
+  checkUploadLimit,
+  incrementUploadCount,
+  todayDateString,
+  validateUploadInput,
+} from './upload.func';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

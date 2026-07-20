@@ -34,12 +34,12 @@ vi.mock('@neondatabase/serverless', () => ({
 import { calculateAverage, checkBlobVisible, upsertRating, validateRatingInput } from './rating.func';
 import {
   AVERAGE_RATING_COLUMNS,
-  BLOB_VISIBLE_COLUMNS,
-  RATINGS_COLUMNS,
   averageRatingRow,
+  BLOB_VISIBLE_COLUMNS,
   emptySelectResult,
   mutationArrayResult,
   ratingRow,
+  RATINGS_COLUMNS,
   selectArrayResult,
 } from './test-helpers';
 
