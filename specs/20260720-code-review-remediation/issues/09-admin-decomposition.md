@@ -4,14 +4,14 @@
 
 **Blocked by:** 04 (admin error handling — builds on the ErrorBanner component extracted there)
 
-**Status:** ready-for-agent
+**Status:** complete
 
-- [ ] `UserTable` component extracted from the users tab (rows, loading skeleton, empty state, error state)
-- [ ] `BlobTable` component extracted from the blobs tab
-- [ ] `FlaggedQueue` component extracted from the flagged tab
-- [ ] `FeedbackList` component extracted from the feedback tab
-- [ ] `StorageCards` component extracted from the storage stats section
-- [ ] `ConfirmModal` component extracted and reusable across all tabs
-- [ ] Each extracted component is under ~200 lines
-- [ ] Admin dashboard renders identically to before
-- [ ] All existing admin functionality works (approve, ban, delete, resolve, refresh)
+- [x] `UserTable` component extracted from the users tab (rows, loading skeleton, empty state, error state)
+- [x] `BlobTable` component extracted from the blobs tab
+- [x] `FlaggedQueue` component extracted from the flagged tab
+- [x] `FeedbackList` component extracted from the feedback tab
+- [x] `StorageCards` component extracted from the storage stats section
+- [x] `ConfirmModal` component extracted and reusable across all tabs
+- [x] Each extracted component is under ~200 lines
+- [x] Admin dashboard renders identically to before
+- [x] All existing admin functionality works (approve, ban, delete, resolve, refresh)
